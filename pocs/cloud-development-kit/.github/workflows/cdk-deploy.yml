@@ -1,0 +1,30 @@
+
+name: CDK Deploy
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  cdk-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install pnpm
+        run: corepack enable && corepack prepare pnpm@8.8.0 --activate
+      - name: Install deps
+        run: pnpm -w install
+      - name: Build CDK
+        run: pnpm --filter infra/cdk build
+      - name: CDK Deploy
+        env:
+          AWS_REGION: us-east-1
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          cd infra/cdk
+          npx cdk deploy --require-approval never --all

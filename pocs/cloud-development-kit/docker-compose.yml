@@ -1,0 +1,20 @@
+
+version: '3.8'
+services:
+  frontend:
+    build: ./apps/frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_GRAPHQL_URL=http://host.docker.internal:20002/graphql
+  backend:
+    build: ./apps/backend
+    ports:
+      - "3001:3001"
+    environment:
+      - APPSYNC_URL=http://host.docker.internal:20002/graphql
+  appsync-mock:
+    image: docker/getting-started
+    ports:
+      - "20002:80"
+    # lightweight placeholder so frontend/backend can reach something during local demo

@@ -1,0 +1,16 @@
+{
+  "name": "infra-cdk",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "cdk": "cdk"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.99.0",
+    "constructs": "^10.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "aws-cdk": "^2.99.0"
+  }
+}
