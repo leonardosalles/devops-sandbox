@@ -6,6 +6,7 @@
     "infra/*"
   ],
   "devDependencies": {
+    "@types/aws-lambda": "^8.10.158",
     "@types/node": "^24.10.1",
     "turbo": "^1.11.0"
   },

@@ -12,7 +12,11 @@ const typeDefs = fs.readFileSync(
 
 const resolvers = {
   Query: {
-    hello: require("./resolvers/Query/hello").hello,
+    hello: async () => {
+      const lambda = require("../../lambda-local/src/index");
+
+      return lambda.handler({ fieldName: "hello" });
+    },
   },
 };
 
@@ -23,6 +27,7 @@ async function start() {
   const server = new ApolloServer({ schema });
 
   await server.start();
+
   app.use("/graphql", express.json(), expressMiddleware(server));
 
   app.listen(20002, () =>

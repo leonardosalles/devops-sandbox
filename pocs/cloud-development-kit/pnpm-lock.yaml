@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@types/aws-lambda':
+        specifier: ^8.10.158
+        version: 8.10.158
       '@types/node':
         specifier: ^24.10.1
         version: 24.10.1
@@ -957,6 +960,9 @@ packages:
 
   '@types/async@2.0.50':
     resolution: {integrity: sha512-VMhZMMQgV1zsR+lX/0IBfAk+8Eb7dPVMWiQGFAt3qjo5x7Ml6b77jUo0e1C3ToD+XRDXqtrfw+6AB0uUsPEr3Q==}
+
+  '@types/aws-lambda@8.10.158':
+    resolution: {integrity: sha512-v/n2WsL1ksRKigfqZ9ff7ANobfT3t/T8kI8UOiur98tREwFulv9lRv+pDrocGPWOe3DpD2Y2GKRO+OiyxwgaCQ==}
 
   '@types/body-parser@1.19.6':
     resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
@@ -4152,6 +4158,8 @@ snapshots:
 
   '@types/async@2.0.50':
     optional: true
+
+  '@types/aws-lambda@8.10.158': {}
 
   '@types/body-parser@1.19.6':
     dependencies:
