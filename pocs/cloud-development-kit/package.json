@@ -8,6 +8,9 @@
   "devDependencies": {
     "@types/aws-lambda": "^8.10.158",
     "@types/node": "^24.10.1",
+    "@typescript-eslint/eslint-plugin": "^8.46.4",
+    "@typescript-eslint/parser": "^8.46.4",
+    "prettier": "^3.6.2",
     "turbo": "^1.11.0"
   },
   "scripts": {
@@ -15,6 +18,8 @@
     "build": "turbo build",
     "start": "turbo start",
     "infra:deploy": "pnpm -F infra-cdk run deploy",
-    "infra:destroy": "pnpm -F infra-cdk run destroy"
+    "infra:destroy": "pnpm -F infra-cdk run destroy",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,css,md}\"",
+  "format:check": "prettier --check \"**/*.{ts,tsx,js,json,css,md}\""
   }
 }

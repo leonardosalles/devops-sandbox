@@ -3,6 +3,7 @@ import * as cdk from "aws-cdk-lib";
 import { AppSyncStack } from "../lib/stacks/appsync.stack";
 import { S3Stack } from "../lib/stacks/s3.stack";
 import { FrontendStack } from "../lib/stacks/frontend.stack";
+import { BackendStack } from "../lib/stacks/backend.stack";
 
 const app = new cdk.App();
 
@@ -11,15 +12,20 @@ const APP_NAME = process.env.APP_NAME!;
 
 new AppSyncStack(app, `${APP_NAME}-${PREFIX}-AppSyncStack`, {
   appName: APP_NAME,
-  prefix: PREFIX
+  prefix: PREFIX,
 });
 
 new S3Stack(app, `${APP_NAME}-${PREFIX}-S3Stack`, {
   appName: APP_NAME,
-  prefix: PREFIX
+  prefix: PREFIX,
 });
 
 new FrontendStack(app, `${APP_NAME}-${PREFIX}-FrontendStack`, {
   appName: APP_NAME,
-  prefix: PREFIX
+  prefix: PREFIX,
+});
+
+new BackendStack(app, `${APP_NAME}-${PREFIX}-BackendStack`, {
+  appName: APP_NAME,
+  prefix: PREFIX,
 });
