@@ -26,7 +26,7 @@ export class BackendStack extends PrefixedCdkStack {
         memoryLimitMiB: 512,
         desiredCount: 1,
         taskImageOptions: {
-          image: ecs.ContainerImage.fromAsset("../../apps/backend"),
+          image: ecs.ContainerImage.fromAsset("../../apps/backend/dist"),
           containerPort: 3001,
           environment: {
             APPSYNC_URL: props.env?.region
@@ -35,7 +35,9 @@ export class BackendStack extends PrefixedCdkStack {
           },
         },
         publicLoadBalancer: true,
-      }
+        minHealthyPercent: 100,
+        maxHealthyPercent: 200,
+      },
     );
 
     new cdk.CfnOutput(this, "BackendURL", {

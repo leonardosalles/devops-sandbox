@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "outDir": "../cdk.out/lambda",
+    "rootDir": "./",
+    "module": "CommonJS",
+    "target": "ES2020",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true
+  },
+  "include": ["**/*.ts"]
+}
