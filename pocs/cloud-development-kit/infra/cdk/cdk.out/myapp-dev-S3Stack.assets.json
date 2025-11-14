@@ -1,0 +1,36 @@
+{
+  "version": "48.0.0",
+  "files": {
+    "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6": {
+      "displayName": "myapp-dev-S3Stack/Custom::S3AutoDeleteObjectsCustomResourceProvider Code",
+      "source": {
+        "path": "asset.faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "272411245373-us-east-1-5cff91db": {
+          "bucketName": "cdk-hnb659fds-assets-272411245373-us-east-1",
+          "objectKey": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::272411245373:role/cdk-hnb659fds-file-publishing-role-272411245373-us-east-1"
+        }
+      }
+    },
+    "da7b5f8918c0af1520b758fbc64ff5f253361882f4a415501c5367dda5ab00e5": {
+      "displayName": "myapp-dev-S3Stack Template",
+      "source": {
+        "path": "myapp-dev-S3Stack.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "272411245373-us-east-1-9dda230c": {
+          "bucketName": "cdk-hnb659fds-assets-272411245373-us-east-1",
+          "objectKey": "da7b5f8918c0af1520b758fbc64ff5f253361882f4a415501c5367dda5ab00e5.json",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::272411245373:role/cdk-hnb659fds-file-publishing-role-272411245373-us-east-1"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

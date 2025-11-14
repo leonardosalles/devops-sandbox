@@ -17,4 +17,4 @@ services:
     image: docker/getting-started
     ports:
       - "20002:80"
-    # lightweight placeholder so frontend/backend can reach something during local demo
+    

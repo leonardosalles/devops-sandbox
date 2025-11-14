@@ -4,7 +4,9 @@
     "target": "es2020",
     "outDir": "dist",
     "rootDir": "src",
-    "strict": true
+    "strict": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
   },
   "include": [
     "src/**/*"

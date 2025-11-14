@@ -1,0 +1,48 @@
+{
+  "version": "48.0.0",
+  "files": {
+    "2819175352ad1ce0dae768e83fc328fb70fb5f10b4a8ff0ccbcb791f02b0716d": {
+      "displayName": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/Code",
+      "source": {
+        "path": "asset.2819175352ad1ce0dae768e83fc328fb70fb5f10b4a8ff0ccbcb791f02b0716d",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "current_account-current_region-8cfb6a01": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "2819175352ad1ce0dae768e83fc328fb70fb5f10b4a8ff0ccbcb791f02b0716d.zip",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    },
+    "2842c03fa47e46b62ffa582e3e6eabf35b63489ac9ed9dafb04e64c89cd03e6d": {
+      "displayName": "AppSyncHandler/Code",
+      "source": {
+        "path": "asset.2842c03fa47e46b62ffa582e3e6eabf35b63489ac9ed9dafb04e64c89cd03e6d",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "current_account-current_region-409aeb8f": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "2842c03fa47e46b62ffa582e3e6eabf35b63489ac9ed9dafb04e64c89cd03e6d.zip",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    },
+    "ef6db4f13d4b143e83be4751296224d45703032a4f2078a01dc5366c3891e010": {
+      "displayName": "cloud-development-kit-poc-dev-AppSyncStack Template",
+      "source": {
+        "path": "cloud-development-kit-poc-dev-AppSyncStack.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-current_region-473e530c": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "ef6db4f13d4b143e83be4751296224d45703032a4f2078a01dc5366c3891e010.json",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

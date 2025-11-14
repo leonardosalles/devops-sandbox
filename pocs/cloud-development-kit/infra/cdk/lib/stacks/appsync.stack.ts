@@ -1,23 +1,25 @@
 import * as cdk from "aws-cdk-lib";
-import { FieldLogLevel, GraphqlApi, SchemaFile } from "aws-cdk-lib/aws-appsync";
+import * as appsync from "aws-cdk-lib/aws-appsync";
+import { FieldLogLevel, GraphqlApi } from "aws-cdk-lib/aws-appsync";
 import {
-  Code,
   Function as LambdaFunction,
+  Code,
   Runtime,
 } from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 import { join } from "path";
-import { PrefixedCdkStack } from "./prefixed-stack";
+import { PrefixedCdkStack, PrefixedStackProps } from "./prefixed-stack";
 
 export class AppSyncStack extends PrefixedCdkStack {
   public readonly api: GraphqlApi;
-  constructor(scope: Construct, id: string) {
-    super(scope, id);
+
+  constructor(scope: Construct, id: string, props: PrefixedStackProps) {
+    super(scope, id, props);
 
     this.api = new GraphqlApi(this, "Api", {
-      name: this.prefix + "-graphql",
-      schema: SchemaFile.fromAsset(
-        join(__dirname, "../../schema/schema.graphql")
+      name: `${this.prefix}-graphql`,
+      definition: appsync.Definition.fromFile(
+        join(__dirname, "../../../schema/schema.graphql")
       ),
       xrayEnabled: true,
       logConfig: { fieldLogLevel: FieldLogLevel.ALL },
@@ -27,7 +29,7 @@ export class AppSyncStack extends PrefixedCdkStack {
       runtime: Runtime.NODEJS_20_X,
       handler: "index.handler",
       code: Code.fromAsset(join(__dirname, "../../lambda/resolver")),
-      environment: { BUCKET: this.prefix + "-files" },
+      environment: { BUCKET: `${this.prefix}-files` },
     });
 
     const lambdaDs = this.api.addLambdaDataSource("LambdaDS", handler);

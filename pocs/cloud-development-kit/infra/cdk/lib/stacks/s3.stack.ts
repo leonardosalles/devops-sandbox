@@ -1,26 +1,27 @@
 import * as cdk from "aws-cdk-lib";
+import * as iam from "aws-cdk-lib/aws-iam";
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { Bucket } from "aws-cdk-lib/aws-s3";
 import { Construct } from "constructs";
-import { PrefixedCdkStack } from "./prefixed-stack";
+import { PrefixedCdkStack, PrefixedStackProps } from "./prefixed-stack";
 
-export class StorageStack extends PrefixedCdkStack {
+export class S3Stack extends PrefixedCdkStack {
   public readonly bucket: Bucket;
-  constructor(scope: Construct, id: string) {
-    super(scope, id);
+
+  constructor(scope: Construct, id: string, props: PrefixedStackProps) {
+    super(scope, id, props);
 
     this.bucket = new Bucket(this, "Files", {
-      bucketName: this.prefix + "-files",
+      bucketName: `${this.prefix}-files`,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
     });
 
-    // Allow the lambda from AppSync to access the bucket
     this.bucket.addToResourcePolicy(
       new PolicyStatement({
         actions: ["s3:GetObject", "s3:PutObject"],
-        resources: [this.bucket.bucketArn + "/*"],
-        principals: [],
+        resources: [`${this.bucket.bucketArn}/*`],
+        principals: [new iam.ServicePrincipal("lambda.amazonaws.com")],
       })
     );
   }

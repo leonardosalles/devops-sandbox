@@ -1,0 +1,450 @@
+{
+ "Resources": {
+  "ApiApiLogsRole90293F72": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "appsync.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSAppSyncPushToCloudWatchLogs"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "cloud-development-kit-poc-development-AppSyncStack/Api/ApiLogsRole/Resource"
+   }
+  },
+  "ApiF70053CD": {
+   "Type": "AWS::AppSync::GraphQLApi",
+   "Properties": {
+    "AuthenticationType": "API_KEY",
+    "LogConfig": {
+     "CloudWatchLogsRoleArn": {
+      "Fn::GetAtt": [
+       "ApiApiLogsRole90293F72",
+       "Arn"
+      ]
+     },
+     "FieldLogLevel": "ALL"
+    },
+    "Name": "cloud-development-kit-poc-development-graphql",
+    "XrayEnabled": true
+   },
+   "Metadata": {
+    "aws:cdk:path": "cloud-development-kit-poc-development-AppSyncStack/Api/Resource"
+   }
+  },
+  "ApiSchema510EECD7": {
+   "Type": "AWS::AppSync::GraphQLSchema",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ApiF70053CD",
+      "ApiId"
+     ]
+    },
+    "Definition": "type Query { hello: String! }\n"
+   },
+   "Metadata": {
+    "aws:cdk:path": "cloud-development-kit-poc-development-AppSyncStack/Api/Schema"
+   }
+  },
+  "ApiDefaultApiKeyF991C37B": {
+   "Type": "AWS::AppSync::ApiKey",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ApiF70053CD",
+      "ApiId"
+     ]
+    }
+   },
+   "DependsOn": [
+    "ApiSchema510EECD7"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "cloud-development-kit-poc-development-AppSyncStack/Api/DefaultApiKey"
+   }
+  },
+  "ApiLogRetention94272E33": {
+   "Type": "Custom::LogRetention",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+      "Arn"
+     ]
+    },
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/appsync/apis/",
+       {
+        "Fn::GetAtt": [
+         "ApiF70053CD",
+         "ApiId"
+        ]
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "cloud-development-kit-poc-development-AppSyncStack/Api/LogRetention/Resource"
+   }
+  },
+  "ApiLambdaDSServiceRole7A3013FF": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "appsync.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "cloud-development-kit-poc-development-AppSyncStack/Api/LambdaDS/ServiceRole/Resource"
+   }
+  },
+  "ApiLambdaDSServiceRoleDefaultPolicyDDA25F27": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "lambda:InvokeFunction",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "AppSyncHandlerC41B9ACB",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "AppSyncHandlerC41B9ACB",
+             "Arn"
+            ]
+           },
+           ":*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ApiLambdaDSServiceRoleDefaultPolicyDDA25F27",
+    "Roles": [
+     {
+      "Ref": "ApiLambdaDSServiceRole7A3013FF"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "cloud-development-kit-poc-development-AppSyncStack/Api/LambdaDS/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "ApiLambdaDSFF24A5CA": {
+   "Type": "AWS::AppSync::DataSource",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ApiF70053CD",
+      "ApiId"
+     ]
+    },
+    "LambdaConfig": {
+     "LambdaFunctionArn": {
+      "Fn::GetAtt": [
+       "AppSyncHandlerC41B9ACB",
+       "Arn"
+      ]
+     }
+    },
+    "Name": "LambdaDS",
+    "ServiceRoleArn": {
+     "Fn::GetAtt": [
+      "ApiLambdaDSServiceRole7A3013FF",
+      "Arn"
+     ]
+    },
+    "Type": "AWS_LAMBDA"
+   },
+   "Metadata": {
+    "aws:cdk:path": "cloud-development-kit-poc-development-AppSyncStack/Api/LambdaDS/Resource"
+   }
+  },
+  "ApihelloQueryResolver632798FA": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ApiF70053CD",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "LambdaDS",
+    "FieldName": "hello",
+    "Kind": "UNIT",
+    "TypeName": "Query"
+   },
+   "DependsOn": [
+    "ApiLambdaDSFF24A5CA",
+    "ApiSchema510EECD7"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "cloud-development-kit-poc-development-AppSyncStack/Api/helloQueryResolver/Resource"
+   }
+  },
+  "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "cloud-development-kit-poc-development-AppSyncStack/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/Resource"
+   }
+  },
+  "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "logs:PutRetentionPolicy",
+        "logs:DeleteRetentionPolicy"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+    "Roles": [
+     {
+      "Ref": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "cloud-development-kit-poc-development-AppSyncStack/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Handler": "index.handler",
+    "Runtime": "nodejs22.x",
+    "Timeout": 900,
+    "Code": {
+     "S3Bucket": "cdk-hnb659fds-assets-272411245373-us-east-1",
+     "S3Key": "2819175352ad1ce0dae768e83fc328fb70fb5f10b4a8ff0ccbcb791f02b0716d.zip"
+    },
+    "Role": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "cloud-development-kit-poc-development-AppSyncStack/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/Resource",
+    "aws:asset:path": "asset.2819175352ad1ce0dae768e83fc328fb70fb5f10b4a8ff0ccbcb791f02b0716d",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "AppSyncHandlerServiceRole9FC2FD31": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "cloud-development-kit-poc-development-AppSyncStack/AppSyncHandler/ServiceRole/Resource"
+   }
+  },
+  "AppSyncHandlerC41B9ACB": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": "cdk-hnb659fds-assets-272411245373-us-east-1",
+     "S3Key": "2842c03fa47e46b62ffa582e3e6eabf35b63489ac9ed9dafb04e64c89cd03e6d.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "BUCKET": "cloud-development-kit-poc-development-files"
+     }
+    },
+    "Handler": "index.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "AppSyncHandlerServiceRole9FC2FD31",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs20.x"
+   },
+   "DependsOn": [
+    "AppSyncHandlerServiceRole9FC2FD31"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "cloud-development-kit-poc-development-AppSyncStack/AppSyncHandler/Resource",
+    "aws:asset:path": "asset.2842c03fa47e46b62ffa582e3e6eabf35b63489ac9ed9dafb04e64c89cd03e6d",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/1WOwW7CMBBEv4W7sy2hUs+Bqj00UmnyAWhxlmDi2CZrg6Io/17ZKFV7mnkzq9XkkOcv8LzCO2ey6TKtjjDVHmUn8M6HCZ3j0UiYPgZ056sunBK7k0n0Xf6nWp6pxxgUTn3SKErsjw2+ocfahkFSrP5QRWz1jYYYL34WCnuYKqvTddK91UqOER9uFtq2DKVtK/JkvLJG8OaAzOQZiiiCN7ANsiO/RSah0xCY3oOR6Xx3Mouf5zRk2ffr05/aY6tMG4uv4F3wszC2Ibjw0y3PYf0K69WFlcqGYLzqCaqH/gBBKsLnVwEAAA=="
+   },
+   "Metadata": {
+    "aws:cdk:path": "cloud-development-kit-poc-development-AppSyncStack/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "GraphqlUrl": {
+   "Value": {
+    "Fn::GetAtt": [
+     "ApiF70053CD",
+     "GraphQLUrl"
+    ]
+   }
+  },
+  "GraphqlApiKey": {
+   "Value": {
+    "Fn::GetAtt": [
+     "ApiDefaultApiKeyF991C37B",
+     "ApiKey"
+    ]
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

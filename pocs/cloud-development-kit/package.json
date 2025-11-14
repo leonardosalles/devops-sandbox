@@ -13,6 +13,8 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
-    "start": "turbo start"
+    "start": "turbo start",
+    "infra:deploy": "pnpm -F infra-cdk run deploy",
+    "infra:destroy": "pnpm -F infra-cdk run destroy"
   }
 }

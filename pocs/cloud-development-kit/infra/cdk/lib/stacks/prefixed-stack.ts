@@ -1,15 +1,24 @@
-import { Stack, StackProps } from "aws-cdk-lib";
+import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
-import { prefix } from "../../env-config";
 
-export interface PrefixedStackProps extends StackProps {
-  envName?: string;
+interface AwsEnv {
+  account: string;
+  region: string;
 }
 
-export class PrefixedCdkStack extends Stack {
-  protected readonly prefix: string;
-  constructor(scope: Construct, id: string, props?: PrefixedStackProps) {
-    super(scope, `${prefix}-${id}`, props);
-    this.prefix = prefix;
+export interface PrefixedStackProps extends cdk.StackProps {
+  appName: string;
+  prefix: string;
+}
+
+export class PrefixedCdkStack extends cdk.Stack {
+  public readonly appName: string;
+  public readonly prefix: string;
+
+  constructor(scope: Construct, id: string, props: PrefixedStackProps) {
+    super(scope, id, props);
+
+    this.appName = props.appName;
+    this.prefix = `${props.appName}-${props.prefix}`;
   }
 }
