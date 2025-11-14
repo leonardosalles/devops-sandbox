@@ -1,8 +1,11 @@
-
 import { ApolloClient, InMemoryCache, gql } from "@apollo/client";
 
 export default function Home({ data }) {
-  return <div style={{padding:20}}>GraphQL response: {data?.hello ?? 'no-data'}</div>;
+  return (
+    <div style={{ padding: 20 }}>
+      GraphQL response: {data?.hello ?? "no-data"}
+    </div>
+  );
 }
 
 export async function getServerSideProps() {
@@ -12,7 +15,13 @@ export async function getServerSideProps() {
   });
 
   try {
-    const { data } = await client.query({ query: gql`query { hello }` });
+    const { data } = await client.query({
+      query: gql`
+        query {
+          hello
+        }
+      `,
+    });
     return { props: { data } };
   } catch (e) {
     return { props: { data: null } };

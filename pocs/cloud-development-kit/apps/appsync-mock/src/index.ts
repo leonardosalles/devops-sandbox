@@ -1,20 +1,17 @@
-import { makeExecutableSchema } from "@graphql-tools/schema";
+import path from "path";
+import fs from "fs";
+import express from "express";
 import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@apollo/server/express4";
-import express from "express";
-import fs from "fs";
-import path from "path";
+import { makeExecutableSchema } from "@graphql-tools/schema";
 
-const typeDefs = fs.readFileSync(
-  path.join(__dirname, "../schema.graphql"),
-  "utf8"
-);
+const schemaPath = path.join(__dirname, "schema.graphql");
+const typeDefs = fs.readFileSync(schemaPath, "utf8");
 
 const resolvers = {
   Query: {
     hello: async () => {
-      const lambda = require("../../lambda-local/src/index");
-
+      const lambda = require("../../lambda-local/src/hello");
       return lambda.handler({ fieldName: "hello" });
     },
   },
