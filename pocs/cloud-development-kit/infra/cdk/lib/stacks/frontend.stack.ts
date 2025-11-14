@@ -44,7 +44,7 @@ export class FrontendStack extends PrefixedCdkStack {
             cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         },
         defaultRootObject: "index.html",
-      }
+      },
     );
 
     new s3deploy.BucketDeployment(this, "DeployFrontend", {
