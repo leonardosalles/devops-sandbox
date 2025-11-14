@@ -1,7 +1,6 @@
-
-import { Stack, StackProps } from 'aws-cdk-lib';
-import { Construct } from 'constructs';
-import { prefix, region } from '../../env-config';
+import { Stack, StackProps } from "aws-cdk-lib";
+import { Construct } from "constructs";
+import { prefix } from "../../env-config";
 
 export interface PrefixedStackProps extends StackProps {
   envName?: string;

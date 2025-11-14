@@ -1,5 +1,4 @@
 
-#!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
 import { AppSyncStack } from '../lib/stacks/appsync-stack';
 import { StorageStack } from '../lib/stacks/s3-stack';
