@@ -1,0 +1,17 @@
+{
+  "name": "@cs2/infra",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.224.0",
+    "constructs": "^10.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.5.6",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.0"
+  }
+}

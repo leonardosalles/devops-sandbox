@@ -1,0 +1,143 @@
+# CS2 Server Manager — AWS (CDK + Lambda + EC2 + ECR + Next.js)
+
+This monorepo deploys a fully automated, **on-demand Counter-Strike 2 hosting system**, powered by:
+
+- **AWS CDK**
+- **AWS Lambda**
+- **Amazon EC2**
+- **Amazon ECR**
+- **Amazon DynamoDB**
+- **Amazon API Gateway**
+- **Next.js App Router UI**
+- **Turborepo + pnpm**
+
+The dashboard allows you to **host, start, stop, restart, and terminate** CS2 servers dynamically.
+
+---
+
+## 🚀 Quick Deployment Guide
+
+### 1. Install dependencies
+
+```bash
+pnpm install
+```
+
+### 2. Configure deployment variables
+
+Edit:
+
+```
+.env.deploy
+```
+
+Fill in:
+
+```
+AWS_ACCOUNT_ID=YOUR_ACCOUNT_ID
+AWS_REGION=sa-east-1
+DOCKER_IMAGE_NAME=cs2-server
+EC2_INSTANCE_TYPE=t3.small
+
+RCON_PASSWORD=your_rcon_password
+GSLT=your_gslt_token
+```
+
+### 3. Build & push the CS2 Docker image
+
+```bash
+./scripts/build-and-push-ecr.sh
+```
+
+### 4. Build Lambda (TypeScript)
+
+```bash
+pnpm --filter @cs2/control-lambda build
+```
+
+### 5. Build CDK Infrastructure
+
+```bash
+pnpm --filter @cs2/infra build
+```
+
+### 6. Bootstrap CDK (first time only)
+
+```bash
+cd packages/infra
+npx cdk bootstrap aws://$AWS_ACCOUNT_ID/$AWS_REGION
+```
+
+### 7. Deploy all stacks
+
+```bash
+npx cdk deploy --all --require-approval never
+```
+
+Copy the API URL printed after deploy.
+
+---
+
+## 🖥️ Run the UI
+
+Create:
+
+```
+apps/ui/.env.local
+```
+
+Add:
+
+```
+NEXT_PUBLIC_API_URL=https://your-api-id.execute-api.sa-east-1.amazonaws.com/prod/
+```
+
+Run UI:
+
+```bash
+pnpm --filter @cs2/ui dev
+```
+
+Open:
+
+```
+http://localhost:3000
+```
+
+---
+
+## ⚙️ How It Works
+
+- **Host New Server** → creates a DynamoDB entry  
+- **Start** → launches EC2 & runs CS2 Docker  
+- **Stop** → stops EC2  
+- **Restart** → reboots EC2  
+- **Terminate** → destroys the instance  
+
+---
+
+## 🎮 Features
+
+✔️ CS2 (app 740)  
+✔️ Metamod + Sourcemod  
+✔️ Admin menu  
+✔️ RCON enabled  
+✔️ Multi‑server support  
+✔️ Stable pinned Dockerfile  
+
+---
+
+## 📦 Monorepo Structure
+
+```
+apps/
+  ui/
+
+packages/
+  infra/
+  control-lambda/
+  docker/
+
+scripts/
+  build-and-push-ecr.sh
+```

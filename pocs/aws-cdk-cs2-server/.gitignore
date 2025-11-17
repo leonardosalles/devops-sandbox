@@ -1,0 +1,6 @@
+node_modules/
+cdk.out/
+.env.deploy
+aws-cdk-cs2-server.zip
+dist/
+build/
