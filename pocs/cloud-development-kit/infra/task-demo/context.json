@@ -1,0 +1,18 @@
+{
+  "taskName": "hello",
+  "description": "A simple hello world task",
+  "parameters": {
+    "name": {
+      "type": "string",
+      "description": "Name to greet",
+      "required": true,
+      "default": "World"
+    },
+    "repeat": {
+      "type": "number",
+      "description": "Number of times to repeat the greeting",
+      "required": false,
+      "default": 1
+    }
+  }
+}
