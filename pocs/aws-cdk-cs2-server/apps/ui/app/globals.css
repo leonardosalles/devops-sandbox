@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Noise background */
+body {
+  background: radial-gradient(ellipse at center, rgba(15,23,34,0.65), rgba(6,8,10,1));
+  background-color: #0b0f14;
+  color: #e6eef6;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* subtle animated scanline */
+.bg-scanlines::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: linear-gradient(transparent 96%, rgba(255,255,255,0.01) 100%);
+  background-size: 100% 3px;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  opacity: 0.6;
+  animation: scan 8s linear infinite;
+}
+@keyframes scan {
+  0% { transform: translateY(-2%); }
+  100% { transform: translateY(102%); }
+}
+
+/* subtle noise */
+.noise {
+  position: fixed;
+  inset: 0;
+  background-image: url("/noise.png");
+  opacity: 0.06;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+
+/* glass card */
+.glass {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border: 1px solid rgba(255,255,255,0.04);
+  backdrop-filter: blur(6px) saturate(120%);
+}
+
+/* HUD left */
+.hud {
+  width: 260px;
+}
+
+/* small util */
+.kv { color: #9fb3c8; font-size: 12px; }
