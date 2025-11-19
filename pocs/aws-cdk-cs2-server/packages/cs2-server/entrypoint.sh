@@ -1,28 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SRCDS_DIR=/home/steam/cs2
+SRCDS_DIR=/home/steam/cs2/game
 
-GSLT="${GSLT:-}"
-RCON_PASSWORD="${RCON_PASSWORD:-}"
-SERVER_HOSTNAME="${SERVER_HOSTNAME:-Watercooler Server}"
-MAP="${MAP:-de_inferno}"
+echo "Starting Watercooler Server..."
 
-echo "[CS2] Updating server build..."
-/home/steam/steamcmd/steamcmd.sh \
-    +force_install_dir ${SRCDS_DIR} \
-    +login anonymous \
-    +app_update 730 -validate \
-    +quit
-
-echo "[CS2] Starting server..."
-
-exec ${SRCDS_DIR}/csgo/bin/linuxsteamrt64/cs2 \
+exec "${SRCDS_DIR}/bin/linuxsteamrt64/cs2" \
   -dedicated \
   -insecure \
   -usercon \
   -console \
   +sv_setsteamaccount "${GSLT}" \
   +rcon_password "${RCON_PASSWORD}" \
-  +hostname "${SERVER_HOSTNAME}" \
-  +map "${MAP}"
+  +hostname "${SERVER_HOSTNAME:-Watercooler Server}" \
+  +map "${MAP:-de_inferno}"
