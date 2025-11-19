@@ -16,6 +16,8 @@ RUN if [ -d ${SRCDS_DIR}/game/csgo/addons/sourcemod/scripting ]; then \
   || echo "Failed to compile $f"; \
   fi; \
   done; \
+  else \
+  echo "No scripting directory found!"; \
   fi
 
 COPY entrypoint.sh /entrypoint.sh
