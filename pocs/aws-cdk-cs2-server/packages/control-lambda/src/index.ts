@@ -28,9 +28,9 @@ const RCON_PASSWORD = process.env.RCON_PASSWORD || "";
 const GSLT = process.env.GSLT || "";
 
 const KEY_NAME = "cs2-key";
-
 const SECURITY_GROUP_ID = process.env.SECURITY_GROUP_ID!;
 const SUBNET_ID = process.env.SUBNET_ID!;
+const INSTANCE_PROFILE_NAME = process.env.INSTANCE_PROFILE_NAME!;
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
@@ -56,15 +56,10 @@ async function findLatestAmazonLinux2Ami(): Promise<string> {
 
   const res = await ec2.send(cmd);
   const images = res.Images || [];
-
   images.sort((a, b) =>
     (b.CreationDate || "").localeCompare(a.CreationDate || "")
   );
-
-  const ami = images[0]?.ImageId;
-  if (!ami) throw new Error("Could not find Amazon Linux 2 AMI");
-
-  return ami;
+  return images[0]?.ImageId!;
 }
 
 async function waitForPublicIp(instanceId: string, timeoutMs = 60_000) {
@@ -100,18 +95,17 @@ export const handler = async (event: APIGatewayProxyEvent) => {
 
     if (method === "GET" && path === "/servers") {
       const res = await ddb.send(new ScanCommand({ TableName: TABLE }));
-      const items = (res.Items || [])
-        .map((i) => unmarshall(i))
-        .filter((s) => s.state !== "TERMINATED");
-      return json(items);
+      return json(
+        (res.Items || [])
+          .map((i) => unmarshall(i))
+          .filter((s) => s.state !== "TERMINATED")
+      );
     }
 
     const match = path.match(
       /^\/servers\/([^\/]+)\/(start|stop|restart|terminate)$/
     );
-
-    if (!match) return json({ error: "unsupported" }, 400);
-    if (method !== "POST") return json({ error: "unsupported" }, 400);
+    if (!match || method !== "POST") return json({ error: "unsupported" }, 400);
 
     const id = match[1];
     const action = match[2];
@@ -120,7 +114,6 @@ export const handler = async (event: APIGatewayProxyEvent) => {
       new GetItemCommand({ TableName: TABLE, Key: marshall({ id }) })
     );
     if (!get.Item) return json({ error: "not found" }, 404);
-
     const server = unmarshall(get.Item);
 
     if (action === "start") {
@@ -128,7 +121,6 @@ export const handler = async (event: APIGatewayProxyEvent) => {
         await ec2.send(
           new StartInstancesCommand({ InstanceIds: [server.instanceId] })
         );
-
         const publicIp = await waitForPublicIp(server.instanceId);
 
         await ddb.send(
@@ -148,36 +140,27 @@ export const handler = async (event: APIGatewayProxyEvent) => {
       }
 
       const ami = await findLatestAmazonLinux2Ami();
-      const instanceType =
-        (process.env.EC2_INSTANCE_TYPE as string) || "t3.small";
+      const instanceType = process.env.EC2_INSTANCE_TYPE || "t3.small";
 
       const userdata = `#!/bin/bash
 set -eux
 
-# ---> Install Docker
 yum update -y
 amazon-linux-extras install -y docker
 systemctl enable docker
 systemctl start docker
 usermod -a -G docker ec2-user
-
-# install aws cli (for ecr login)
 yum install -y awscli
 
-# write env file for container
 echo "RCON_PASSWORD=${RCON_PASSWORD}" >> /envfile
 echo "GSLT=${GSLT}" >> /envfile
 
-# Login to ECR (uses repo owner from REPO_URI like 123456789012.dkr.ecr.region.amazonaws.com)
 aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${
         REPO_URI.split("/")[0]
       }
 
-# Pull and run container (retry pull a couple times)
 for i in 1 2 3; do
-  if docker pull ${REPO_URI}:latest; then
-    break
-  fi
+  if docker pull ${REPO_URI}:latest; then break; fi
   sleep 5
 done
 
@@ -187,7 +170,7 @@ docker run -d --name cs2 --env-file /envfile \
   -p 27020:27020/udp \
   -p 27005:27005/udp \
   -p 4380:4380/udp \
-  ${REPO_URI}:latest || true
+  ${REPO_URI}:latest
 `;
 
       const runParams: any = {
@@ -197,12 +180,27 @@ docker run -d --name cs2 --env-file /envfile \
         MinCount: 1,
         MaxCount: 1,
         UserData: Buffer.from(userdata).toString("base64"),
+
+        IamInstanceProfile: {
+          Name: INSTANCE_PROFILE_NAME,
+        },
+
         NetworkInterfaces: [
           {
             AssociatePublicIpAddress: true,
             DeviceIndex: 0,
             Groups: [SECURITY_GROUP_ID],
             SubnetId: SUBNET_ID,
+          },
+        ],
+        BlockDeviceMappings: [
+          {
+            DeviceName: "/dev/xvda",
+            Ebs: {
+              VolumeSize: 80,
+              VolumeType: "gp3",
+              DeleteOnTermination: true,
+            },
           },
         ],
       };
@@ -230,7 +228,6 @@ docker run -d --name cs2 --env-file /envfile \
 
     if (action === "stop") {
       if (!server.instanceId) return json({ error: "no instance" }, 400);
-
       await ec2.send(
         new StopInstancesCommand({ InstanceIds: [server.instanceId] })
       );
@@ -244,29 +241,23 @@ docker run -d --name cs2 --env-file /envfile \
           ExpressionAttributeValues: marshall({ ":s": "STOPPED" }),
         })
       );
-
       return json({ ok: true });
     }
 
     if (action === "restart") {
       if (!server.instanceId) return json({ error: "no instance" }, 400);
-
       await ec2.send(
         new RebootInstancesCommand({ InstanceIds: [server.instanceId] })
       );
-
       const publicIp = await waitForPublicIp(server.instanceId);
-
       return json({ ok: true, publicIp });
     }
 
     if (action === "terminate") {
       if (!server.instanceId) return json({ error: "no instance" }, 400);
-
       await ec2.send(
         new TerminateInstancesCommand({ InstanceIds: [server.instanceId] })
       );
-
       await ddb.send(
         new UpdateItemCommand({
           TableName: TABLE,
@@ -276,7 +267,6 @@ docker run -d --name cs2 --env-file /envfile \
           ExpressionAttributeValues: marshall({ ":s": "TERMINATED" }),
         })
       );
-
       return json({ ok: true });
     }
 

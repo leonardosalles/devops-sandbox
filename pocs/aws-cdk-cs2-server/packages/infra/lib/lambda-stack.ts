@@ -16,22 +16,27 @@ export interface LambdaStackProps extends StackProps {
   ec2Role: iam.Role;
   vpc: any;
   securityGroup: any;
+  rconPassword: string;
+  gslt: string;
 }
 
 export class LambdaStack extends Stack {
   public readonly controlFn: lambda.Function;
+
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
 
-    const role = new iam.Role(this, "LambdaExecRole", {
+    const lambdaRole = new iam.Role(this, "LambdaExecRole", {
       assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
     });
-    role.addManagedPolicy(
+
+    lambdaRole.addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName(
         "service-role/AWSLambdaBasicExecutionRole"
       )
     );
-    role.addToPolicy(
+
+    lambdaRole.addToPolicy(
       new iam.PolicyStatement({
         actions: [
           "ec2:RunInstances",
@@ -41,10 +46,24 @@ export class LambdaStack extends Stack {
           "ec2:RebootInstances",
           "ec2:TerminateInstances",
           "ec2:DescribeImages",
-          "ec2:CreateTags",
         ],
         resources: ["*"],
       })
+    );
+
+    lambdaRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: ["iam:PassRole"],
+        resources: [props.ec2Role.roleArn],
+      })
+    );
+
+    const instanceProfile = new iam.CfnInstanceProfile(
+      this,
+      "Cs2InstanceProfile",
+      {
+        roles: [props.ec2Role.roleName],
+      }
     );
 
     this.controlFn = new NodejsFunction(this, "ControlFn", {
@@ -59,14 +78,16 @@ export class LambdaStack extends Stack {
       environment: {
         TABLE_NAME: props.table.tableName,
         REPO_URI: props.repoUri,
-        REGION:
-          process.env.AWS_REGION ||
-          process.env.CDK_DEFAULT_REGION ||
-          "sa-east-1",
-        RCON_PASSWORD: process.env.RCON_PASSWORD || "",
-        GSLT: process.env.GSLT || "",
+        REGION: process.env.AWS_REGION || "sa-east-1",
+
+        SECURITY_GROUP_ID: props.securityGroup.securityGroupId,
+        SUBNET_ID: props.vpc.publicSubnets[0].subnetId,
+        INSTANCE_PROFILE_NAME: instanceProfile.ref,
+
+        RCON_PASSWORD: props.rconPassword,
+        GSLT: props.gslt,
       },
-      role,
+      role: lambdaRole,
       timeout: cdk.Duration.seconds(60),
     });
 
