@@ -12,6 +12,17 @@ export default function ServerCard({
   s: any;
   onAction: (id: string, a: string) => void;
 }) {
+  const normalizedState = (s.state || "").toUpperCase();
+
+  const stateColor =
+    normalizedState === "RUNNING"
+      ? "text-green-400"
+      : normalizedState === "STOPPED"
+      ? "text-gray-400"
+      : normalizedState === "PENDING"
+      ? "text-yellow-400"
+      : "text-gray-400";
+
   return (
     <motion.div
       {...({
@@ -29,24 +40,37 @@ export default function ServerCard({
         </div>
         <div className="text-right">
           <div className="text-sm text-gray-400">State</div>
-          <div
-            className={`font-semibold ${
-              s.state === "running"
-                ? "text-green-400"
-                : s.state === "stopped"
-                ? "text-gray-400"
-                : "text-yellow-400"
-            }`}
-          >
-            {s.state.toUpperCase()}
-          </div>
+          <div className={`font-semibold ${stateColor}`}>{normalizedState}</div>
         </div>
       </div>
-      <div className="mt-3 mb-4">
+
+      <div className="mt-3">
         <div className="text-sm text-gray-400">Instance</div>
         <div className="font-mono">{s.instanceId || "-"}</div>
       </div>
-      <div className="flex gap-3 flex-wrap">
+
+      <div className="mt-3">
+        <div className="text-sm text-gray-400">IP Address</div>
+
+        {s.publicIp ? (
+          <div className="flex items-center gap-3">
+            <div className="font-mono text-white">{s.publicIp}:27015</div>
+
+            <button
+              onClick={() =>
+                navigator.clipboard.writeText(`${s.publicIp}:27015`)
+              }
+              className="text-xs text-blue-400 hover:underline"
+            >
+              Copy
+            </button>
+          </div>
+        ) : (
+          <div className="text-gray-500 italic">pending...</div>
+        )}
+      </div>
+
+      <div className="mt-4 flex gap-3 flex-wrap">
         <button
           onClick={() => onAction(s.id, "start")}
           className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md"

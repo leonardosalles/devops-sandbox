@@ -19,9 +19,9 @@ export default function Navbar({ onHost }: { onHost?: () => void }) {
             CS2
           </div>
           <div>
-            <div className="text-lg font-semibold">CS2 PRO MANAGER</div>
+            <div className="text-lg font-semibold">CS2 SERVER MANAGER</div>
             <div className="text-xs text-gray-400">
-              Manage matches • 5v5 • Modded
+              Manage Servers - Private Matches
             </div>
           </div>
         </div>

@@ -8,8 +8,7 @@ import Particles from "./components/Particles";
 
 export const dynamic = "force-static";
 
-const fetcher = (url: string) =>
-  fetch(url, { mode: "no-cors" }).then((r) => r.json());
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export default function Page() {
   const api =
@@ -59,7 +58,7 @@ export default function Page() {
     <div>
       <Particles />
       <Navbar onHost={hostNew} />
-      <HUD stats={stats} />
+
       <main className="max-w-6xl mx-auto px-6 py-10">
         <div className="flex items-start gap-6">
           <div className="flex-1 min-w-0">
