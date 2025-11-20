@@ -174,6 +174,11 @@ for i in 1 2 3; do
   sleep 5
 done
 
+echo "[UserData] Removing existing container..."
+docker stop cs2 || true
+docker rm cs2 || true
+
+echo "[UserData] Running container..."
 docker run -d --rm --name cs2 --env-file /envfile \
   -p 27015:27015/tcp \
   -p 27015:27015/udp \
