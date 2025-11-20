@@ -5,7 +5,7 @@
 # and dedicated server environments that do not use the 'sniper' runtime.
 GAME_PATH="$(dirname "$0")"
 
-CS2_BIN="${GAME_PATH}/../bin/linuxsteamrt64/cs2" 
+CS2_BIN="${GAME_PATH}/../../bin/linuxsteamrt64/cs2"
 
 export LD_LIBRARY_PATH="${GAME_PATH}/bin/linuxsteamrt64:$LD_LIBRARY_PATH"
 
