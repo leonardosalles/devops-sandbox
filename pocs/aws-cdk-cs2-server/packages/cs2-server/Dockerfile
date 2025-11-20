@@ -3,7 +3,10 @@ FROM cm2network/cs2:latest
 ENV SRCDS_DIR=/home/steam/cs2
 USER root
 
-RUN dpkg --add-architecture i386 && \
+RUN dpkg --add-architecture i386
+
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends dirmngr debian-archive-keyring && \
   apt-get update && \
   apt-get install -y --no-install-recommends \
   lib32gcc-s1 \
@@ -15,6 +18,7 @@ RUN dpkg --add-architecture i386 && \
 ENV STEAMCMD_DIR=/home/steam/steamcmd
 ENV TERM=dumb
 ENV LD_LIBRARY_PATH="${STEAMCMD_DIR}/linux32:${STEAMCMD_DIR}/linux64"
+
 COPY addons ${SRCDS_DIR}/game/csgo/addons
 COPY cfg ${SRCDS_DIR}/game/csgo/cfg
 COPY cs2.sh ${SRCDS_DIR}/game/csgo/cs2.sh

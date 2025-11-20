@@ -141,23 +141,34 @@ export const handler = async (event: APIGatewayProxyEvent) => {
 
       const instanceType = process.env.EC2_INSTANCE_TYPE || "t3.small";
 
-      const userdata = `#!/bin/bash
+      const userData = `#!/bin/bash
 set -eux
 
-yum update -y
-amazon-linux-extras install -y docker
-systemctl enable docker
-systemctl start docker
-usermod -a -G docker ec2-user
-yum install -y awscli
+echo "[UserData] Iniciando script de inicialização do CS2..."
+
+TIMEOUT=60
+echo "[UserData] Aguardando Docker Daemon (max $TIMEOUT segundos)..."
+for i in \`seq 1 $TIMEOUT\`; do
+  if docker info > /dev/null 2>&1; then
+    echo "[UserData] ✅ Docker está pronto!"
+    break
+  fi
+  if [ $i -eq $TIMEOUT ]; then
+    echo "[UserData] ❌ Falha: Docker não iniciou após $TIMEOUT segundos."
+    exit 1
+  fi
+  sleep 1
+done
 
 echo "RCON_PASSWORD=${RCON_PASSWORD}" >> /envfile
 echo "GSLT=${GSLT}" >> /envfile
 
+echo "[UserData] Fazendo login no ECR..."
 aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${
         REPO_URI.split("/")[0]
       }
 
+echo "[UserData] Tentando pull da imagem e rodando container..."
 for i in 1 2 3; do
   if docker pull ${REPO_URI}:latest; then break; fi
   sleep 5
@@ -178,7 +189,7 @@ docker run -d --name cs2 --env-file /envfile \
         KeyName: KEY_NAME,
         MinCount: 1,
         MaxCount: 1,
-        UserData: Buffer.from(userdata).toString("base64"),
+        UserData: Buffer.from(userData).toString("base64"),
 
         IamInstanceProfile: {
           Name: INSTANCE_PROFILE_NAME,

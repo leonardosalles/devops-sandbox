@@ -19,6 +19,7 @@ export interface LambdaStackProps extends StackProps {
   rconPassword: string;
   gslt: string;
   imageAmiId: string;
+  ec2InstanceType: string;
 }
 
 export class LambdaStack extends Stack {
@@ -79,6 +80,7 @@ export class LambdaStack extends Stack {
       RCON_PASSWORD: props.rconPassword,
       GSLT: props.gslt,
       IMAGE_AMI_ID: props.imageAmiId,
+      EC2_INSTANCE_TYPE: props.ec2InstanceType,
     };
 
     this.controlFn = new NodejsFunction(this, "ControlFn", {

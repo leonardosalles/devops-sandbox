@@ -33,6 +33,7 @@ export class AppStack extends cdk.Stack {
       rconPassword: process.env.RCON_PASSWORD!,
       gslt: process.env.GSLT!,
       imageAmiId: process.env.IMAGE_AMI_ID!,
+      ec2InstanceType: process.env.EC2_INSTANCE_TYPE!,
     });
 
     const api = new ApiStack(this, "ApiStack", {
