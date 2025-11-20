@@ -41,6 +41,10 @@ EC2_INSTANCE_TYPE=t3.small
 
 RCON_PASSWORD=your_rcon_password
 GSLT=your_gslt_token
+
+EC2_INSTANCE_TYPE=t3.medium
+DOCKER_IMAGE_NAME=cs2-server-modded
+IMAGE_AMI_ID=ami-00626b685a570fb6f
 ```
 
 ### 3. Build & push the CS2 Docker image
@@ -108,11 +112,11 @@ http://localhost:3000
 
 ## ⚙️ How It Works
 
-- **Host New Server** → creates a DynamoDB entry  
-- **Start** → launches EC2 & runs CS2 Docker  
-- **Stop** → stops EC2  
-- **Restart** → reboots EC2  
-- **Terminate** → destroys the instance  
+- **Host New Server** → creates a DynamoDB entry
+- **Start** → launches EC2 & runs CS2 Docker
+- **Stop** → stops EC2
+- **Restart** → reboots EC2
+- **Terminate** → destroys the instance
 
 ---
 
@@ -123,7 +127,7 @@ http://localhost:3000
 ✔️ Admin menu  
 ✔️ RCON enabled  
 ✔️ Multi‑server support  
-✔️ Stable pinned Dockerfile  
+✔️ Stable pinned Dockerfile
 
 ---
 

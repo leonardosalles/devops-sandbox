@@ -8,7 +8,7 @@ GAME_PATH="$(dirname "$0")"
 
 export LD_LIBRARY_PATH="${GAME_PATH}/bin/linuxsteamrt64:$LD_LIBRARY_PATH"
 
-STEAM_RUNTIME="${GAME_PATH}/../../../../../steam-runtime"
+STEAM_RUNTIME="/home/steam/Steam/steamapps/common/SteamLinuxRuntime_soldier"
 if [ ! -d "$STEAM_RUNTIME" ]; then
     STEAM_RUNTIME="/home/steam/.steam/steam/steamapps/common/SteamLinuxRuntime_soldier"
 fi
