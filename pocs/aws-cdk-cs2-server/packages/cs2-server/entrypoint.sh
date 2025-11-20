@@ -36,9 +36,15 @@ if [ ${RETRY_COUNT} -eq ${MAX_RETRIES} ]; then
   exit 1
 fi
 
+SERVER_BIN_PATH="${SRCDS_DIR}/game/bin/linuxsteamrt64"
+CSGO_BIN_PATH="${SRCDS_DIR}/game/csgo/bin/linuxsteamrt64"
+STEAMCMD_BIN_PATH="${STEAMCMD_DIR}/linux64" 
+
+export LD_LIBRARY_PATH="${SERVER_BIN_PATH}:${CSGO_BIN_PATH}:${STEAMCMD_BIN_PATH}:${LD_LIBRARY_PATH}"
+
 CS2_WRAPPER_SCRIPT="${SRCDS_DIR}/game/csgo/cs2.sh"
 
-echo "[CS2] ▶️ Iniciando Servidor via Wrapper Script da Valve..."
+echo "[CS2] ✅ LD_LIBRARY_PATH forçado. Iniciando Servidor via Wrapper Script da Valve..."
 
 exec "${CS2_WRAPPER_SCRIPT}" \
   -dedicated \

@@ -98,7 +98,6 @@ echo ""
 # Deploy CDK Stacks
 # ------------------------------------------------------
 echo "🚀 Deploying CDK stacks..."
-cd packages/infra
 
 npx cdk deploy --all --require-approval never
 

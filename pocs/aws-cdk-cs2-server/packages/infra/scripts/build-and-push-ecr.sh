@@ -36,6 +36,6 @@ docker buildx build \
   --platform linux/amd64 \
   -t $ACCOUNT.dkr.ecr.$REGION.amazonaws.com/$IMAGE:latest \
   --push \
-  packages/cs2-server
+  ../cs2-server
 
 echo "Done: $ACCOUNT.dkr.ecr.$REGION.amazonaws.com/$IMAGE:latest"

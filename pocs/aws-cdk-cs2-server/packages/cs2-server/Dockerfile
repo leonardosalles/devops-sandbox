@@ -15,7 +15,6 @@ RUN dpkg --add-architecture i386 && \
 ENV STEAMCMD_DIR=/home/steam/steamcmd
 ENV TERM=dumb
 ENV LD_LIBRARY_PATH="${STEAMCMD_DIR}/linux32:${STEAMCMD_DIR}/linux64"
-
 COPY addons ${SRCDS_DIR}/game/csgo/addons
 COPY cfg ${SRCDS_DIR}/game/csgo/cfg
 COPY cs2.sh ${SRCDS_DIR}/game/csgo/cs2.sh

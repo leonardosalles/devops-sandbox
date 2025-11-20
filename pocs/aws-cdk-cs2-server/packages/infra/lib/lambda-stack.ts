@@ -66,31 +66,32 @@ export class LambdaStack extends Stack {
       }
     );
 
+    const environment = {
+      TABLE_NAME: props.table.tableName,
+      REPO_URI: props.repoUri,
+      REGION: process.env.AWS_REGION || "sa-east-1",
+
+      SECURITY_GROUP_ID: props.securityGroup.securityGroupId,
+      SUBNET_ID: props.vpc.publicSubnets[0].subnetId,
+      INSTANCE_PROFILE_NAME: instanceProfile.ref,
+
+      RCON_PASSWORD: props.rconPassword,
+      GSLT: props.gslt,
+    };
+
     this.controlFn = new NodejsFunction(this, "ControlFn", {
       entry: path.join(__dirname, "../../control-lambda/src/index.ts"),
       handler: "handler",
       runtime: lambda.Runtime.NODEJS_20_X,
-      bundling: {
-        minify: true,
-        target: "node20",
-        externalModules: [],
-      },
-      environment: {
-        TABLE_NAME: props.table.tableName,
-        REPO_URI: props.repoUri,
-        REGION: process.env.AWS_REGION || "sa-east-1",
-
-        SECURITY_GROUP_ID: props.securityGroup.securityGroupId,
-        SUBNET_ID: props.vpc.publicSubnets[0].subnetId,
-        INSTANCE_PROFILE_NAME: instanceProfile.ref,
-
-        RCON_PASSWORD: props.rconPassword,
-        GSLT: props.gslt,
-      },
+      environment,
       role: lambdaRole,
       timeout: cdk.Duration.seconds(60),
     });
 
     props.table.grantReadWriteData(this.controlFn);
+
+    new cdk.CfnOutput(this, "Environment", {
+      value: JSON.stringify(environment),
+    });
   }
 }
