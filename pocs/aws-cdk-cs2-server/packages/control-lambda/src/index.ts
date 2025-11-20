@@ -144,6 +144,11 @@ export const handler = async (event: APIGatewayProxyEvent) => {
       const userData = `#!/bin/bash
 set -eux
 
+RCON_PASSWORD="${RCON_PASSWORD}"
+GSLT="${GSLT}"
+AWS_REGION="${AWS_REGION}"
+REPO_URI="${REPO_URI}"
+
 SRCDS_DIR=/home/steam/cs2
 STEAMCMD_DIR=/home/steam/steamcmd
 STEAM_USER=steam
