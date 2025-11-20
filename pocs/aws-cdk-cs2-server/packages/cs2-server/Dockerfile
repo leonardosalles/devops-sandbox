@@ -3,11 +3,12 @@ FROM cm2network/cs2:latest
 ENV SRCDS_DIR=/home/steam/cs2
 USER root
 
-RUN dpkg --add-architecture i386
+RUN dpkg --add-architecture i386 && \
+  apt-get update && \
+  apt-get install -y --no-install-recommends dirmngr debian-archive-keyring && \
+  rm -rf /var/lib/apt/lists/*
 
 RUN apt-get update && \
-  apt-get install -y --no-install-recommends dirmngr debian-archive-keyring && \
-  apt-get update && \
   apt-get install -y --no-install-recommends \
   lib32gcc-s1 \
   libstdc++6:i386 \
