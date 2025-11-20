@@ -2,6 +2,8 @@
 
 import { motion, type MotionProps } from "framer-motion";
 import type { HTMLAttributes } from "react";
+import { useState } from "react";
+import Modal from "./Modal";
 
 type MotionDivProps = HTMLAttributes<HTMLDivElement> & MotionProps;
 
@@ -12,6 +14,12 @@ export default function ServerCard({
   s: any;
   onAction: (id: string, a: string) => void;
 }) {
+  const [rconPassword, setRconPassword] = useState("");
+
+  const handleRconConnect = () => {
+    // Logic to connect using Rcon
+  };
+
   const normalizedState = (s.state || "").toUpperCase();
 
   const stateColor =
@@ -94,6 +102,12 @@ export default function ServerCard({
           className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md"
         >
           Terminate
+        </button>
+        <button
+          onClick={() => onAction(s.id, "rcon")}
+          className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md"
+        >
+          Rcon
         </button>
       </div>
     </motion.div>
