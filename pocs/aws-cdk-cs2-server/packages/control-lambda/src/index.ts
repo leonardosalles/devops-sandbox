@@ -144,17 +144,17 @@ export const handler = async (event: APIGatewayProxyEvent) => {
       const userData = `#!/bin/bash
 set -eux
 
-echo "[UserData] Iniciando script de inicialização do CS2..."
+echo "[UserData] Initializing CS2 Server..."
 
 TIMEOUT=60
-echo "[UserData] Aguardando Docker Daemon (max $TIMEOUT segundos)..."
+echo "[UserData] Waiting for Docker Daemon (max $TIMEOUT seconds)..."
 for i in \`seq 1 $TIMEOUT\`; do
   if docker info > /dev/null 2>&1; then
-    echo "[UserData] ✅ Docker está pronto!"
+    echo "[UserData] ✅ Docker is ready!"
     break
   fi
   if [ $i -eq $TIMEOUT ]; then
-    echo "[UserData] ❌ Falha: Docker não iniciou após $TIMEOUT segundos."
+    echo "[UserData] ❌ Failed: Docker did not start after $TIMEOUT seconds."
     exit 1
   fi
   sleep 1
@@ -163,18 +163,18 @@ done
 echo "RCON_PASSWORD=${RCON_PASSWORD}" >> /envfile
 echo "GSLT=${GSLT}" >> /envfile
 
-echo "[UserData] Fazendo login no ECR..."
+echo "[UserData] Logging into ECR..."
 aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${
         REPO_URI.split("/")[0]
       }
 
-echo "[UserData] Tentando pull da imagem e rodando container..."
+echo "[UserData] Pulling image and running container..."
 for i in 1 2 3; do
   if docker pull ${REPO_URI}:latest; then break; fi
   sleep 5
 done
 
-docker run -d --name cs2 --env-file /envfile \
+docker run -d --rm --name cs2 --env-file /envfile \
   -p 27015:27015/tcp \
   -p 27015:27015/udp \
   -p 27020:27020/udp \

@@ -4,8 +4,10 @@ ENV SRCDS_DIR=/home/steam/cs2
 USER root
 
 RUN dpkg --add-architecture i386 && \
-  apt-get update && \
-  apt-get install -y --no-install-recommends dirmngr debian-archive-keyring && \
+  rm -rf /var/lib/apt/lists/* && \
+  apt-get clean && \
+  apt-get update --allow-releaseinfo-change && \
+  apt-get install -y --allow-unauthenticated --no-install-recommends dirmngr debian-archive-keyring && \
   rm -rf /var/lib/apt/lists/*
 
 RUN apt-get update && \
