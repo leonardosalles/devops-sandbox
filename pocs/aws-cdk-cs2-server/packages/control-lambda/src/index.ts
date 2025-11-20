@@ -178,6 +178,9 @@ echo "[UserData] Removing existing container..."
 docker stop cs2 || true
 docker rm cs2 || true
 
+echo "[UserData] Setting permissions for CS2 directory..."
+chown -R 1000:1000 /home/steam/cs2 || true
+
 echo "[UserData] Running container..."
 docker run -d --rm --name cs2 --env-file /envfile \
   -p 27015:27015/tcp \

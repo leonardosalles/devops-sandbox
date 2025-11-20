@@ -18,7 +18,6 @@ while [ ${RETRY_COUNT} -lt ${MAX_RETRIES} ]; do
   
   ${STEAMCMD_DIR}/steamcmd.sh \
     +@sSteamCmdForcePlatformType linux \
-    +set_steam_cmd_timeout 120 \
     +force_install_dir ${SRCDS_DIR} \
     +login anonymous \
     +app_update 730 validate \
