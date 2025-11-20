@@ -144,7 +144,14 @@ export const handler = async (event: APIGatewayProxyEvent) => {
       const userData = `#!/bin/bash
 set -eux
 
-echo "[UserData] Initializing CS2 Server..."
+SRCDS_DIR=/home/steam/cs2
+STEAMCMD_DIR=/home/steam/steamcmd
+STEAM_USER=steam
+
+if ! id "\${STEAM_USER}" >/dev/null 2>&1; then
+    useradd -m -s /bin/bash \${STEAM_USER}
+fi
+usermod -a -G docker \${STEAM_USER}
 
 TIMEOUT=60
 echo "[UserData] Waiting for Docker Daemon (max $TIMEOUT seconds)..."
@@ -153,42 +160,39 @@ for i in \`seq 1 $TIMEOUT\`; do
     echo "[UserData] ✅ Docker is ready!"
     break
   fi
-  if [ $i -eq $TIMEOUT ]; then
-    echo "[UserData] ❌ Failed: Docker did not start after $TIMEOUT seconds."
-    exit 1
-  fi
   sleep 1
 done
 
-echo "RCON_PASSWORD=${RCON_PASSWORD}" >> /envfile
-echo "GSLT=${GSLT}" >> /envfile
+echo "RCON_PASSWORD=\${RCON_PASSWORD}" >> /envfile
+echo "GSLT=\${GSLT}" >> /envfile
 
 echo "[UserData] Logging into ECR..."
-aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${
-        REPO_URI.split("/")[0]
-      }
+aws ecr get-login-password --region \${AWS_REGION} | docker login --username AWS --password-stdin \${REPO_URI.split("/")[0]}
 
-echo "[UserData] Pulling image and running container..."
-for i in 1 2 3; do
-  if docker pull ${REPO_URI}:latest; then break; fi
-  sleep 5
-done
+echo "[UserData] Downloading/validating CS2 DIRECTLY on HOST (EBS)..."
+mkdir -p "\${SRCDS_DIR}"
+chown -R \${STEAM_USER}:\${STEAM_USER} \${SRCDS_DIR} || true
+sudo -u \${STEAM_USER} bash -c "
+  \${STEAMCMD_DIR}/steamcmd.sh \
+    +@sSteamCmdForcePlatformType linux \
+    +force_install_dir \${SRCDS_DIR} \
+    +login anonymous \
+    +app_update 730 validate \
+    +quit
+" || true
 
-echo "[UserData] Removing existing container..."
 docker stop cs2 || true
 docker rm cs2 || true
 
-echo "[UserData] Setting permissions for CS2 directory..."
-chown -R 1000:1000 /home/steam/cs2 || true
-
-echo "[UserData] Running container..."
-docker run -d --rm --name cs2 --env-file /envfile \
-  -p 27015:27015/tcp \
-  -p 27015:27015/udp \
-  -p 27020:27020/udp \
-  -p 27005:27005/udp \
-  -p 4380:4380/udp \
-  ${REPO_URI}:latest
+echo "[UserData] Running the new CS2 container with volume mapping..."
+docker run -d --name cs2 --env-file /envfile \\
+  -v \${SRCDS_DIR}:\${SRCDS_DIR} \\
+  -p 27015:27015/tcp \\
+  -p 27015:27015/udp \\
+  -p 27020:27020/udp \\
+  -p 27005:27005/udp \\
+  -p 4380:4380/udp \\
+  \${REPO_URI}:latest
 `;
 
       const runParams: any = {

@@ -1,11 +1,10 @@
 #!/bin/bash
-# Copyright Valve Corporation
-#
-# This script is a modified version of cs2.sh for use in Docker containers
-# and dedicated server environments that do not use the 'sniper' runtime.
-GAME_PATH="$(dirname "$0")"
+set -euo pipefail
 
-CS2_BIN="${GAME_PATH}/../../bin/linuxsteamrt64/cs2"
+CS2_ROOT_DIR="${CS2_ROOT_DIR:-/home/steam/cs2}"
+CS2_BIN="${CS2_ROOT_DIR}/game/bin/linuxsteamrt64/cs2"
+
+GAME_PATH="$(dirname "$0")"
 
 export LD_LIBRARY_PATH="${GAME_PATH}/bin/linuxsteamrt64:$LD_LIBRARY_PATH"
 
