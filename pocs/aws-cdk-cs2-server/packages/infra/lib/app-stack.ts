@@ -32,6 +32,7 @@ export class AppStack extends cdk.Stack {
       securityGroup: network.sg,
       rconPassword: process.env.RCON_PASSWORD!,
       gslt: process.env.GSLT!,
+      imageAmiId: process.env.IMAGE_AMI_ID!,
     });
 
     const api = new ApiStack(this, "ApiStack", {

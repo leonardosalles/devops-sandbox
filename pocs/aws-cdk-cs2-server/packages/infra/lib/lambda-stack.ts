@@ -18,6 +18,7 @@ export interface LambdaStackProps extends StackProps {
   securityGroup: any;
   rconPassword: string;
   gslt: string;
+  imageAmiId: string;
 }
 
 export class LambdaStack extends Stack {
@@ -77,6 +78,7 @@ export class LambdaStack extends Stack {
 
       RCON_PASSWORD: props.rconPassword,
       GSLT: props.gslt,
+      IMAGE_AMI_ID: props.imageAmiId,
     };
 
     this.controlFn = new NodejsFunction(this, "ControlFn", {

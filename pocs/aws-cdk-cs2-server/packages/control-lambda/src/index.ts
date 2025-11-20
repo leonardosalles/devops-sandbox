@@ -139,7 +139,6 @@ export const handler = async (event: APIGatewayProxyEvent) => {
         return json({ ok: true, instanceId: server.instanceId, publicIp });
       }
 
-      const ami = await findLatestAmazonLinux2Ami();
       const instanceType = process.env.EC2_INSTANCE_TYPE || "t3.small";
 
       const userdata = `#!/bin/bash
@@ -174,7 +173,7 @@ docker run -d --name cs2 --env-file /envfile \
 `;
 
       const runParams: any = {
-        ImageId: ami,
+        ImageId: process.env.IMAGE_AMI_ID!,
         InstanceType: instanceType,
         KeyName: KEY_NAME,
         MinCount: 1,
