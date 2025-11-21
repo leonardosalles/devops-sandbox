@@ -21,6 +21,18 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <div className="noise"></div>
         {children}
         <ToastContainer theme="dark" />
+        <footer className="text-center text-xs text-gray-400 fixed bottom-0 w-full py-2 px-4">
+          Made with <span className="text-red-500">❤️</span> by{" "}
+          <strong>
+            <a
+              target="_blank"
+              rel="noopener noreferrer"
+              href="https://github.com/leonardosalles"
+            >
+              Leonardo Salles
+            </a>
+          </strong>
+        </footer>
       </body>
     </html>
   );

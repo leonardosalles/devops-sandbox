@@ -1,22 +1,21 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import {
   DynamoDBClient,
+  GetItemCommand,
   PutItemCommand,
   ScanCommand,
   UpdateItemCommand,
-  GetItemCommand,
 } from "@aws-sdk/client-dynamodb";
 import {
+  DescribeInstancesCommand,
   EC2Client,
+  RebootInstancesCommand,
   RunInstancesCommand,
   StartInstancesCommand,
   StopInstancesCommand,
-  RebootInstancesCommand,
   TerminateInstancesCommand,
-  DescribeImagesCommand,
-  DescribeInstancesCommand,
 } from "@aws-sdk/client-ec2";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 
 const ddb = new DynamoDBClient({});
 const ec2 = new EC2Client({});
@@ -48,20 +47,6 @@ function json(body: any, status = 200): APIGatewayProxyResult {
   };
 }
 
-async function findLatestAmazonLinux2Ami(): Promise<string> {
-  const cmd = new DescribeImagesCommand({
-    Owners: ["amazon"],
-    Filters: [{ Name: "name", Values: ["amzn2-ami-hvm-*-x86_64-gp2"] }],
-  });
-
-  const res = await ec2.send(cmd);
-  const images = res.Images || [];
-  images.sort((a, b) =>
-    (b.CreationDate || "").localeCompare(a.CreationDate || "")
-  );
-  return images[0]?.ImageId!;
-}
-
 async function waitForPublicIp(instanceId: string, timeoutMs = 60_000) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
@@ -87,7 +72,7 @@ export const handler = async (event: APIGatewayProxyEvent) => {
       await ddb.send(
         new PutItemCommand({
           TableName: TABLE,
-          Item: marshall({ id, state: "STOPPED" }),
+          Item: marshall({ id, state: "CREATED" }),
         })
       );
       return json({ id });
@@ -130,7 +115,7 @@ export const handler = async (event: APIGatewayProxyEvent) => {
             UpdateExpression: "SET #s = :s, publicIp = :p",
             ExpressionAttributeNames: { "#s": "state" },
             ExpressionAttributeValues: marshall({
-              ":s": "RUNNING",
+              ":s": "INITIALIZING",
               ":p": publicIp,
             }),
           })
@@ -289,7 +274,7 @@ docker run -d --name cs2 --env-file /envfile \\
           ExpressionAttributeNames: { "#s": "state" },
           ExpressionAttributeValues: marshall({
             ":i": instanceId,
-            ":s": "RUNNING",
+            ":s": "INITIALIZING",
             ":p": publicIp,
           }),
         })
@@ -326,10 +311,13 @@ docker run -d --name cs2 --env-file /envfile \\
     }
 
     if (action === "terminate") {
-      if (!server.instanceId) return json({ error: "no instance" }, 400);
-      await ec2.send(
-        new TerminateInstancesCommand({ InstanceIds: [server.instanceId] })
-      );
+      try {
+        await ec2.send(
+          new TerminateInstancesCommand({ InstanceIds: [server.instanceId] })
+        );
+      } catch (err) {
+        console.error("Failed to terminate instance:", err);
+      }
       await ddb.send(
         new UpdateItemCommand({
           TableName: TABLE,

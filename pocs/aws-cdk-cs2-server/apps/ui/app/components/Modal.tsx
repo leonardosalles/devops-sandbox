@@ -12,7 +12,7 @@ export default function Modal({ onClose, children }: ModalProps) {
       onClick={onClose}
     >
       <div
-        className="bg-cs2panel rounded-lg overflow-hidden shadow-xl min-w-[300px] p-4 relative"
+        className="bg-cs2panel rounded-lg overflow-hidden shadow-xl min-w-[300px] p-4 relative max-w-3xl"
         onClick={(e) => e.stopPropagation()}
       >
         <button

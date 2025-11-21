@@ -2,32 +2,29 @@
 
 import { motion, type MotionProps } from "framer-motion";
 import type { HTMLAttributes } from "react";
-import { useState } from "react";
-import Modal from "./Modal";
+import LoadingButton from "./LoadingButton";
 
 type MotionDivProps = HTMLAttributes<HTMLDivElement> & MotionProps;
 
 export default function ServerCard({
   s,
   onAction,
+  loading,
+  instanceId,
 }: {
   s: any;
   onAction: (id: string, a: string) => void;
+  loading: boolean;
+  instanceId: string;
 }) {
-  const [rconPassword, setRconPassword] = useState("");
-
-  const handleRconConnect = () => {
-    // Logic to connect using Rcon
-  };
-
   const normalizedState = (s.state || "").toUpperCase();
 
   const stateColor =
     normalizedState === "RUNNING"
       ? "text-green-400"
-      : normalizedState === "STOPPED"
+      : normalizedState === "CREATED"
       ? "text-gray-400"
-      : normalizedState === "PENDING"
+      : normalizedState === "INITIALIZING"
       ? "text-yellow-400"
       : "text-gray-400";
 
@@ -64,51 +61,67 @@ export default function ServerCard({
           <div className="flex items-center gap-3">
             <div className="font-mono text-white">{s.publicIp}:27015</div>
 
-            <button
+            <LoadingButton
+              loading={loading}
               onClick={() =>
                 navigator.clipboard.writeText(`${s.publicIp}:27015`)
               }
-              className="text-xs text-blue-400 hover:underline"
+              className="text-xs text-blue-400 hover:underline px-2 py-1"
             >
               Copy
-            </button>
+            </LoadingButton>
           </div>
         ) : (
-          <div className="text-gray-500 italic">pending...</div>
+          <div className="text-gray-500 italic">Start server to see IP</div>
         )}
       </div>
 
       <div className="mt-4 flex gap-3 flex-wrap">
-        <button
+        <LoadingButton
+          loading={loading}
           onClick={() => onAction(s.id, "start")}
-          className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md"
+          className="bg-green-600 hover:bg-green-700"
         >
           Start
-        </button>
-        <button
-          onClick={() => onAction(s.id, "stop")}
-          className="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-md"
-        >
-          Stop
-        </button>
-        <button
-          onClick={() => onAction(s.id, "restart")}
-          className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
-        >
-          Restart
-        </button>
-        <button
+        </LoadingButton>
+
+        {instanceId && (
+          <>
+            <LoadingButton
+              loading={loading}
+              onClick={() => onAction(s.id, "stop")}
+              className="bg-yellow-600 hover:bg-yellow-700"
+            >
+              Stop
+            </LoadingButton>
+
+            <LoadingButton
+              loading={loading}
+              onClick={() => onAction(s.id, "restart")}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Restart
+            </LoadingButton>
+          </>
+        )}
+
+        <LoadingButton
+          loading={loading}
           onClick={() => onAction(s.id, "terminate")}
-          className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md"
+          className="bg-red-600 hover:bg-red-700"
         >
-          Terminate
-        </button>
-        <button
-          onClick={() => onAction(s.id, "rcon")}
-          className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md"
-        >
-          Rcon
-        </button>
+          {instanceId ? "Terminate" : "Delete"}
+        </LoadingButton>
+
+        {instanceId && (
+          <LoadingButton
+            loading={loading}
+            onClick={() => onAction(s.id, "rcon")}
+            className="bg-purple-600 hover:bg-purple-700"
+          >
+            Rcon
+          </LoadingButton>
+        )}
       </div>
     </motion.div>
   );

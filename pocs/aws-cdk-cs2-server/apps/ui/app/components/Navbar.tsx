@@ -2,11 +2,18 @@
 
 import { motion, type MotionProps } from "framer-motion";
 import type { HTMLAttributes } from "react";
+import LoadingButton from "./LoadingButton";
 
 type MotionHeaderProps = HTMLAttributes<HTMLElement> & MotionProps;
 const MotionHeader = (motion as any).header as React.FC<MotionHeaderProps>;
 
-export default function Navbar({ onHost }: { onHost?: () => void }) {
+export default function Navbar({
+  onHost,
+  loading,
+}: {
+  onHost?: () => void;
+  loading: boolean;
+}) {
   return (
     <MotionHeader
       initial={{ y: -20, opacity: 0 }}
@@ -24,15 +31,6 @@ export default function Navbar({ onHost }: { onHost?: () => void }) {
               Manage Servers - Private Matches
             </div>
           </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onHost}
-            className="px-3 py-2 bg-accent hover:opacity-90 rounded-md font-bold"
-          >
-            Host New
-          </button>
         </div>
       </div>
     </MotionHeader>
