@@ -60,6 +60,12 @@ export class LambdaStack extends Stack {
       })
     );
 
+    props.ec2Role.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName(
+        "AmazonEC2ContainerRegistryReadOnly"
+      )
+    );
+
     const instanceProfile = new iam.CfnInstanceProfile(
       this,
       "Cs2InstanceProfile",

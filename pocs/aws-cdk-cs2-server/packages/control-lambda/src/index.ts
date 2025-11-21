@@ -157,29 +157,35 @@ STEAMCMD_DIR=/home/steam/steamcmd
 STEAM_USER=steam
 TIMEOUT=60
 
-echo "[UserData] Starting setup..."
-
 if ! id "\${STEAM_USER}" >/dev/null 2>&1; then
     useradd -m -s /bin/bash \${STEAM_USER}
 fi
 usermod -a -G docker \${STEAM_USER}
 
-echo "[UserData] Installing 32-bit compatibility libraries (i686)..."
-yum install -y glibc.i686 libstdc++ libstdc++.i686
+yum install -y curl tar bzip2 glibc.i686 libstdc++ libstdc++.i686 || true
+
+DEVICE_NAME=$(lsblk -o KNAME,TYPE | grep disk | awk 'NR==1{print $1}')
+SCHEDULER_PATH="/sys/block/\${DEVICE_NAME}/queue/scheduler"
+if [ -f "$SCHEDULER_PATH" ]; then
+    echo noop > "$SCHEDULER_PATH" || true
+fi
+
 for i in \`seq 1 $TIMEOUT\`; do
   if docker info > /dev/null 2>&1; then
-    echo "[UserData] ✅ Docker is ready!"
     break
   fi
   if [ $i -eq $TIMEOUT ]; then
-    echo "[UserData] ❌ Docker failed to start."
+    echo "[UserData] Docker failed to start."
     exit 1
   fi
   sleep 1
 done
 
-echo "[UserData] Installing SteamCMD and dependencies on HOST..."
-yum install -y curl tar bzip2
+docker stop cs2 || true
+docker rm cs2 || true
+docker rmi ${REPO_URI}:latest || true
+docker system prune -f --all || true
+
 mkdir -p "\${STEAMCMD_DIR}"
 chown \${STEAM_USER}:\${STEAM_USER} "\${STEAMCMD_DIR}"
 sudo -u \${STEAM_USER} bash -c "
@@ -188,49 +194,45 @@ sudo -u \${STEAM_USER} bash -c "
   chmod +x steamcmd.sh
 "
 
-echo "[UserData] Downloading/validating CS2 DIRETLY on HOST (EBS)..."
 mkdir -p "\${SRCDS_DIR}"
 chown -R \${STEAM_USER}:\${STEAM_USER} "\${SRCDS_DIR}" || true
 
-sudo -u \${STEAM_USER} bash -c "
-  rm -rf /home/steam/Steam/steamapps/appmanifest_730.acf || true
-  rm -rf /home/steam/Steam/appcache/* || true
-"
+aws ecr get-login-password --region \${AWS_REGION} | docker login --username AWS --password-stdin \${REGISTRY_URI}
 
 for i in 1 2 3; do
-  echo "[Host] Download/Validation attempt (730): \$i of 3..."
-  
-  sudo -u \${STEAM_USER} bash -c "
-    \${STEAMCMD_DIR}/steamcmd.sh \
-      +@sSteamCmdForcePlatformType linux \
-      +force_install_dir \${SRCDS_DIR} \
-      +login anonymous \
-      +app_update 730 validate \
-      +quit
-  "
-  if [ \$? -eq 0 ]; then
-    echo "[Host] ✅ Download/Validation successful!"
+  if docker pull ${REPO_URI}:latest; then
     break
   fi
-  echo "[Host] ⚠️ Validation failed. Waiting 10s before trying again..."
   sleep 10
 done
 
 if [ \$? -ne 0 ]; then
-    echo "[Host] ❌ Critical: CS2 could not be downloaded after multiple attempts."
+    echo "[Host] Critical: Docker pull failed after multiple attempts."
+    exit 1
+fi
+
+for i in 1 2 3; do
+  sudo -u \${STEAM_USER} bash -c "
+    \${STEAMCMD_DIR}/steamcmd.sh \
+      +force_install_dir \${SRCDS_DIR} \
+      +login anonymous \
+      +app_update 730 \
+      +quit
+  "
+  if [ \$? -eq 0 ]; then
+    break
+  fi
+  sleep 10
+done
+
+if [ \$? -ne 0 ]; then
+    echo "[Host] Critical: CS2 could not be downloaded after multiple attempts."
     exit 1
 fi
 
 echo "RCON_PASSWORD=\${RCON_PASSWORD}" >> /envfile
 echo "GSLT=\${GSLT}" >> /envfile
 
-echo "[UserData] Logging into ECR..."
-aws ecr get-login-password --region \${AWS_REGION} | docker login --username AWS --password-stdin \${REGISTRY_URI}
-
-docker stop cs2 || true
-docker rm cs2 || true
-
-echo "[UserData] Running the new CS2 container with volume mapping..."
 docker run -d --name cs2 --env-file /envfile \\
   -v \${SRCDS_DIR}:\${SRCDS_DIR} \\
   -p 27015:27015/tcp \\
@@ -267,6 +269,8 @@ docker run -d --name cs2 --env-file /envfile \\
             Ebs: {
               VolumeSize: 120,
               VolumeType: "gp3",
+              Iops: 6000,
+              Throughput: 250,
               DeleteOnTermination: true,
             },
           },

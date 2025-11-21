@@ -81,12 +81,23 @@ export default function Page() {
     }
   };
 
-  const handleModalClose = () => {
+  const handleModalClose = async () => {
+    if (!selectedServer) return;
     if (rconConnection) {
-      rconConnection.end().then(() => {
-        setRconConnection(null);
-        setIsConnected(false);
+      await fetch(`/api/rcon`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ip: selectedServer.publicIp,
+          password: rconPassword,
+          command: "disconnected",
+        }),
       });
+      setRconConnection(null);
+      setIsConnected(false);
+      toast.success("Rcon disconnected successfully");
     }
     setRconModalOpen(false);
   };
@@ -95,7 +106,7 @@ export default function Page() {
     if (!rconConnection || !selectedServer) return;
     try {
       setLoading(true);
-      await fetch(`/api/rcon`, {
+      const response = await fetch(`/api/rcon`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -106,6 +117,12 @@ export default function Page() {
           command,
         }),
       });
+      const result = await response.json();
+      if (result.response === "") {
+        toast.success("Command sent successfully");
+      } else {
+        toast.error(result.response);
+      }
     } finally {
       setLoading(false);
     }
@@ -208,10 +225,42 @@ export default function Page() {
                       Bot Kick
                     </button>
                     <button
-                      onClick={() => sendRconCommand("warmup_end")}
+                      onClick={() => sendRconCommand("mp_warmup_end")}
                       className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
                     >
                       Warmup End
+                    </button>
+                    <button
+                      onClick={() => sendRconCommand("mp_restartgame 1")}
+                      className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+                    >
+                      Restart Game
+                    </button>
+                    <button
+                      onClick={() => sendRconCommand("mp_remove_freezetime")}
+                      className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+                    >
+                      Remove Freezetime
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => sendRconCommand("mp_startmoney 1000")}
+                      className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+                    >
+                      Set money 1k
+                    </button>
+                    <button
+                      onClick={() => sendRconCommand("mp_startmoney 10000")}
+                      className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+                    >
+                      Set money 10k
+                    </button>
+                    <button
+                      onClick={() => sendRconCommand("mp_startmoney 16000")}
+                      className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+                    >
+                      Set money 16k
                     </button>
                   </div>
                   <input
