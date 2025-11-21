@@ -3,18 +3,21 @@ set -euo pipefail
 
 SRCDS_DIR=/home/steam/cs2
 STEAMCMD_DIR=/home/steam/steamcmd
-LOG_FILE="/tmp/cs2.log"
-
-TIMEOUT=720
 
 echo "[CS2] 🚀 Initializing..."
-mkdir -p "$SRCDS_DIR"
+mkdir -p "${SRCDS_DIR}"
 
-SERVER_BIN="${SRCDS_DIR}/game/bin/linuxsteamrt64/cs2"
+SERVER_BIN_PATH="${SRCDS_DIR}/game/bin/linuxsteamrt64"
+CSGO_BIN_PATH="${SRCDS_DIR}/game/csgo/bin/linuxsteamrt64"
+STEAMCMD_BIN_PATH="${STEAMCMD_DIR}/linux64"
 
-echo "[CS2] 🚀 Starting server (background)..."
+export LD_LIBRARY_PATH="${SERVER_BIN_PATH}:${CSGO_BIN_PATH}:${STEAMCMD_BIN_PATH}:${LD_LIBRARY_PATH}"
+CS2_BIN="${SRCDS_DIR}/game/bin/linuxsteamrt64/cs2"
 
-"$SERVER_BIN" \
+LOG_FILE="/tmp/cs2.log"
+
+echo "[CS2] 🚀 Starting server in background..."
+"${CS2_BIN}" \
   -dedicated \
   -insecure \
   -usercon \
@@ -23,52 +26,45 @@ echo "[CS2] 🚀 Starting server (background)..."
   +rcon_password "${RCON_PASSWORD}" \
   +hostname "${SERVER_HOSTNAME:-Watercooler Server}" \
   +map "${MAP:-de_inferno}" \
-  2>&1 | tee "$LOG_FILE" &
+  2>&1 | tee "${LOG_FILE}" &
 
 CS2_PID=$!
 
-echo "[CS2] 🔍 Waiting for server readiness (log-based, timeout ${TIMEOUT}s)..."
+echo "[CS2] 🔍 Waiting for server readiness (log-based)..."
 
-START_TIME=$(date +%s)
-READY=false
-
-tail -n 0 -F "$LOG_FILE" | while read -r line; do
-  current=$(date +%s)
-  elapsed=$((current - START_TIME))
-
-  if (( elapsed > TIMEOUT )); then
-    echo "[CS2] ❌ Timeout reached (${TIMEOUT}s). Server failed to start."
-    break
-  fi
-  echo "$line" | grep -q "Server is hibernating" && READY=true && break
-  echo "$line" | grep -q "ss_active" && READY=true && break
-  echo "$line" | grep -q "64 player server started" && READY=true && break
-  echo "$line" | grep -q "activated session on GC" && READY=true && break
+TIMEOUT=720
+for i in $(seq 1 $TIMEOUT); do
+    if grep -q "Server is hibernating" "$LOG_FILE"; then
+        echo "[CS2] ✅ Server is RUNNING (hibernating detected)."
+        READY=1
+        break
+    fi
+    if grep -q "Spawn Server" "$LOG_FILE"; then
+        echo "[CS2] ✅ Map loaded, server is running."
+        READY=1
+        break
+    fi
+    sleep 1
 done
 
-if [[ "$READY" == true ]]; then
-  echo "[CS2] ✅ Server fully RUNNING."
-
-  if [[ -n "${API_URL:-}" && -n "${SERVER_ID:-}" ]]; then
+if [[ "${READY:-0}" -ne 1 ]]; then
+    echo "[CS2] ❌ Server failed to start after ${TIMEOUT}s."
     (
-      curl -X POST "${API_URL}/servers/${SERVER_ID}/status" \
-        -H "Content-Type: application/json" \
-        -d '{"state":"RUNNING"}' \
-        && echo "[CS2] ✅ Backend updated: RUNNING"
-    ) & disown
-  fi
-
+        curl -X POST "${API_URL}/servers/${SERVER_ID}/status" \
+          -H "Content-Type: application/json" \
+          -d '{"state":"ERROR"}' \
+          && echo "[CS2] ✅ Backend notified"
+        ) & disown
 else
-  echo "[CS2] ❌ Server failed to start within ${TIMEOUT}s."
-
-  if [[ -n "${API_URL:-}" && -n "${SERVER_ID:-}" ]]; then
-    (
-      curl -X POST "${API_URL}/servers/${SERVER_ID}/status" \
-        -H "Content-Type: application/json" \
-        -d '{"state":"ERROR"}' \
-        && echo "[CS2] ⚠ Backend updated: ERROR"
-    ) & disown
-  fi
+    if [[ -n "${API_URL:-}" && -n "${SERVER_ID:-}" ]]; then
+        echo "[CS2] 🔄 Sending RUNNING state to backend..."
+        (
+        curl -X POST "${API_URL}/servers/${SERVER_ID}/status" \
+          -H "Content-Type: application/json" \
+          -d '{"state":"RUNNING"}' \
+          && echo "[CS2] ✅ Backend notified"
+        ) & disown
+    fi
 fi
 
 echo "[CS2] ▶ Switching to CS2 foreground..."
