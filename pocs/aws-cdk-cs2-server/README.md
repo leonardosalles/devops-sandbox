@@ -36,8 +36,8 @@ Fill in:
 ```
 AWS_ACCOUNT_ID=YOUR_ACCOUNT_ID
 AWS_REGION=sa-east-1
-DOCKER_IMAGE_NAME=cs2-server
-EC2_INSTANCE_TYPE=t3.small
+DOCKER_IMAGE_NAME=cs2-server-modded
+EC2_INSTANCE_TYPE=t3.medium
 
 RCON_PASSWORD=your_rcon_password
 GSLT=your_gslt_token
@@ -45,7 +45,10 @@ GSLT=your_gslt_token
 EC2_INSTANCE_TYPE=t3.medium
 DOCKER_IMAGE_NAME=cs2-server-modded
 IMAGE_AMI_ID=ami-00626b685a570fb6f
+
 ```
+
+PS: ami-00626b685a570fb6f is the AMI ID for a pre-downloaded CS2 server image.
 
 ### 3. Build & push the CS2 Docker image
 
@@ -112,22 +115,25 @@ http://localhost:3000
 
 ## ⚙️ How It Works
 
-- **Host New Server** → creates a DynamoDB entry
+- **Create Server** → creates a DynamoDB entry
 - **Start** → launches EC2 & runs CS2 Docker
 - **Stop** → stops EC2
 - **Restart** → reboots EC2
 - **Terminate** → destroys the instance
+- **Rcon** → runs a command in the CS2 server
 
 ---
 
 ## 🎮 Features
 
-✔️ CS2 (app 740)  
-✔️ Metamod + Sourcemod  
-✔️ Admin menu  
+✔️ CS2 (app 730)  
+✔️ Metamod + Sourcemod (WIP)
+✔️ Quake Sounds (WIP)
+✔️ Admin menu (WIP)
 ✔️ RCON enabled  
 ✔️ Multi‑server support  
 ✔️ Stable pinned Dockerfile
+✔️ Pre-loaded CS server files
 
 ---
 
@@ -139,9 +145,11 @@ apps/
 
 packages/
   infra/
+    scripts/
+      build-and-push-ecr.sh
+      cleanup-aws-region.sh
+      deploy.sh
+      fix-bootstrap.sh
   control-lambda/
   docker/
-
-scripts/
-  build-and-push-ecr.sh
 ```
