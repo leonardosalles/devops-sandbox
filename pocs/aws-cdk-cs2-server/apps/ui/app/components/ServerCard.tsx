@@ -24,6 +24,8 @@ export default function ServerCard({
       ? "text-green-400"
       : normalizedState === "CREATED"
       ? "text-gray-400"
+      : normalizedState === "ERROR"
+      ? "text-red-400"
       : normalizedState === "INITIALIZING"
       ? "text-yellow-400"
       : "text-gray-400";
