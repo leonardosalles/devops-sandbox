@@ -20,7 +20,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="bg-scanlines">
         <div className="noise"></div>
         {children}
-        <ToastContainer />
+        <ToastContainer theme="dark" />
       </body>
     </html>
   );

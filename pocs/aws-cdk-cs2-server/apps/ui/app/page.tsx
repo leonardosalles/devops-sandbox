@@ -100,6 +100,7 @@ export default function Page() {
       toast.success("Rcon disconnected successfully");
     }
     setRconModalOpen(false);
+    setCustomCommand("");
   };
 
   const sendRconCommand = async (command: string) => {
@@ -237,13 +238,25 @@ export default function Page() {
                       Restart Game
                     </button>
                     <button
-                      onClick={() => sendRconCommand("mp_remove_freezetime")}
+                      onClick={() => sendRconCommand("mp_freezetime 0")}
                       className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
                     >
                       Remove Freezetime
                     </button>
                   </div>
                   <div className="flex gap-2">
+                    <button
+                      onClick={() => sendRconCommand("mp_pause_match")}
+                      className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+                    >
+                      Pause
+                    </button>
+                    <button
+                      onClick={() => sendRconCommand("mp_unpause_match")}
+                      className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+                    >
+                      Unpause
+                    </button>
                     <button
                       onClick={() => sendRconCommand("mp_startmoney 1000")}
                       className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
@@ -263,19 +276,25 @@ export default function Page() {
                       Set money 16k
                     </button>
                   </div>
-                  <input
-                    type="text"
-                    placeholder="Enter custom command"
-                    value={customCommand}
-                    onChange={(e) => setCustomCommand(e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded mt-2 bg-cs2panel"
-                  />
-                  <button
-                    onClick={() => sendRconCommand(customCommand)}
-                    className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      sendRconCommand(customCommand);
+                      setCustomCommand("");
+                    }}
                   >
-                    Send Custom Command
-                  </button>
+                    <input
+                      type="text"
+                      placeholder="Enter custom command"
+                      value={customCommand}
+                      onChange={(e) => setCustomCommand(e.target.value)}
+                      className="w-full p-2 border border-gray-300 rounded mt-2 bg-cs2panel"
+                    />
+                    <button className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md">
+                      Send Custom Command
+                    </button>
+                  </form>
                 </div>
               </>
             )}
