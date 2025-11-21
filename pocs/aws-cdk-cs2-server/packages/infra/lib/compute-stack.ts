@@ -9,6 +9,7 @@ export interface ComputeStackProps extends StackProps {
 export class ComputeStack extends Stack {
   public readonly ec2Role: iam.Role;
   public readonly vpc: ec2.IVpc;
+
   constructor(scope: Construct, id: string, props: ComputeStackProps) {
     super(scope, id, props);
     this.vpc = props.vpc;

@@ -28,6 +28,7 @@ export default function Page() {
   );
 
   const [loading, setLoading] = useState(false);
+  const [loadingAction, setLoadingAction] = useState(false);
   const [isRconModalOpen, setRconModalOpen] = useState(false);
   const [rconPassword, setRconPassword] = useState("");
   const [selectedServer, setSelectedServer] = useState<{
@@ -56,7 +57,7 @@ export default function Page() {
 
   async function action(id: string, a: string) {
     try {
-      setLoading(true);
+      setLoadingAction(true);
       const response = await fetch(`${api}servers/${id}/${a}`, {
         method: "POST",
       });
@@ -75,7 +76,7 @@ export default function Page() {
     } catch (error) {
       toast.error(`${a.charAt(0).toUpperCase() + a.slice(1)} failed: ${error}`);
     } finally {
-      setLoading(false);
+      setLoadingAction(false);
     }
   }
 
@@ -174,10 +175,10 @@ export default function Page() {
                 <ServerCard
                   key={s.id}
                   s={s}
-                  loading={loading}
+                  loading={loadingAction}
                   instanceId={s.instanceId}
                   onAction={(id, a) => {
-                    if (loading) return;
+                    if (loadingAction) return;
                     if (a === "rcon") {
                       setSelectedServer(s);
                       setRconModalOpen(true);

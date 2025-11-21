@@ -113,7 +113,7 @@ export default function ServerCard({
           {instanceId ? "Terminate" : "Delete"}
         </LoadingButton>
 
-        {instanceId && (
+        {instanceId && s.state === "RUNNING" && (
           <LoadingButton
             loading={loading}
             onClick={() => onAction(s.id, "rcon")}

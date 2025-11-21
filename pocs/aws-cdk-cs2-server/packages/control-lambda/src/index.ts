@@ -87,6 +87,30 @@ export const handler = async (event: APIGatewayProxyEvent) => {
       );
     }
 
+    if (method === "POST" && path.match(/^\/servers\/([^\/]+)\/status$/)) {
+      const id = path.split("/")[2];
+      const body = JSON.parse(event.body || "{}");
+
+      if (!body.state) {
+        return json({ error: "missing state" }, 400);
+      }
+
+      await ddb.send(
+        new UpdateItemCommand({
+          TableName: TABLE,
+          Key: marshall({ id }),
+          UpdateExpression: "SET #s = :s, lastSeen = :t",
+          ExpressionAttributeNames: { "#s": "state" },
+          ExpressionAttributeValues: marshall({
+            ":s": body.state,
+            ":t": Date.now(),
+          }),
+        })
+      );
+
+      return json({ ok: true });
+    }
+
     const match = path.match(
       /^\/servers\/([^\/]+)\/(start|stop|restart|terminate)$/
     );
@@ -130,6 +154,13 @@ export const handler = async (event: APIGatewayProxyEvent) => {
 
       const userData = `#!/bin/bash
 set -eux
+
+API_URL=$(aws ssm get-parameter \
+  --region sa-east-1 \
+  --name "/cs2/api-url" \
+  --query "Parameter.Value" \
+  --output text)
+SERVER_ID="${id}"
 
 RCON_PASSWORD="${RCON_PASSWORD}"
 GSLT="${GSLT}"
@@ -217,6 +248,9 @@ fi
 
 echo "RCON_PASSWORD=\${RCON_PASSWORD}" >> /envfile
 echo "GSLT=\${GSLT}" >> /envfile
+
+echo "API_URL=\${API_URL}" >> /envfile
+echo "SERVER_ID=\${SERVER_ID}" >> /envfile
 
 docker run -d --name cs2 --env-file /envfile \\
   -v \${SRCDS_DIR}:\${SRCDS_DIR} \\

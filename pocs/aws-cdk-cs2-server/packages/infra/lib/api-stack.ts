@@ -3,6 +3,7 @@ import {
   StackProps,
   aws_apigateway as apigw,
   aws_lambda as lambda,
+  aws_ssm as ssm,
 } from "aws-cdk-lib";
 import { Construct } from "constructs";
 
@@ -33,8 +34,14 @@ export class ApiStack extends Stack {
 
     this.apiUrl = this.api.url;
 
-    const servers = this.api.root.addResource("servers");
+    new ssm.StringParameter(this, "ApiUrlParam", {
+      parameterName: "/cs2/api-url",
+      stringValue: this.apiUrl,
+    });
+
     const lambdaIntegration = new apigw.LambdaIntegration(props.lambdaFunction);
+
+    const servers = this.api.root.addResource("servers");
     servers.addMethod("POST", lambdaIntegration);
     servers.addMethod("GET", lambdaIntegration);
 
@@ -43,5 +50,6 @@ export class ApiStack extends Stack {
     single.addResource("stop").addMethod("POST", lambdaIntegration);
     single.addResource("restart").addMethod("POST", lambdaIntegration);
     single.addResource("terminate").addMethod("POST", lambdaIntegration);
+    single.addResource("status").addMethod("POST", lambdaIntegration);
   }
 }
