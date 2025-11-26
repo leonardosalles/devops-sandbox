@@ -11,16 +11,20 @@ export default async function handler(
     return res.status(405).json({ message: "Method not allowed" });
   }
 
-  const { ip, password, command } = req.body;
+  const { ip, command } = req.body;
 
-  if (!ip || !password || !command) {
+  if (!ip || !command) {
     return res.status(400).json({ message: "Missing parameters" });
   }
 
   try {
     let rconConnection = rconConnections.get(ip);
     if (!rconConnection) {
-      rconConnection = await Rcon.connect({ host: ip, port: 27015, password });
+      rconConnection = await Rcon.connect({
+        host: ip,
+        port: 27015,
+        password: process.env.RCON_PASSWORD!,
+      });
       rconConnections.set(ip, rconConnection);
     }
     const response = await rconConnection.send(command);
