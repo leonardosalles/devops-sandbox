@@ -9,19 +9,30 @@ USER root
 
 RUN dpkg --add-architecture i386 && \
   apt-get update --allow-releaseinfo-change && \
-  apt-get install -y --allow-unauthenticated --no-install-recommends \
-  dirmngr \
-  debian-archive-keyring && \
-  rm -rf /var/lib/apt/lists/*
-
-RUN apt-get update && \
   apt-get install -y --no-install-recommends \
+  curl \
+  unzip \
+  ca-certificates \
   lib32gcc-s1 \
   libstdc++6:i386 \
   libcurl4:i386 \
-  ca-certificates \
-  netcat-openbsd \
-  && rm -rf /var/lib/apt/lists/*
+  netcat-openbsd && \
+  rm -rf /var/lib/apt/lists/*
+
+WORKDIR /tmp
+
+RUN curl -L https://mms.alliedmods.net/mmsdrop/2.0/mmsource-2.0.0-git1374-linux.tar.gz | \
+  tar -xz -C ${SRCDS_DIR}/game/csgo
+
+RUN curl -L https://sm.alliedmods.net/smdrop/1.12/sourcemod-1.12.0-git7221-linux.tar.gz | \
+  tar -xz -C ${SRCDS_DIR}/game/csgo
+
+RUN curl -L https://github.com/Source2ZE/MultiAddonManager/releases/download/v1.4.8/MultiAddonManager-v1.4.8-linux.tar.gz | \
+  tar -xz -C ${SRCDS_DIR}/game/csgo
+
+RUN curl -L https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v1.0.347/counterstrikesharp-linux-1.0.347.zip -o css.zip && \
+  unzip css.zip -d ${SRCDS_DIR}/game/csgo && \
+  rm css.zip
 
 COPY addons ${SRCDS_DIR}/game/csgo/addons
 COPY cfg ${SRCDS_DIR}/game/csgo/cfg
@@ -32,15 +43,13 @@ RUN if [ -d ${SRCDS_DIR}/game/csgo/addons/sourcemod/scripting ]; then \
   echo "Compiling $f..."; \
   ${SRCDS_DIR}/game/csgo/addons/sourcemod/scripting/spcomp \
   "$f" \
-  -o ${SRCDS_DIR}/game/csgo/addons/sourcemod/plugins/$(basename "$f" .sp).smx \
-  || echo "Failed to compile $f"; \
+  -o ${SRCDS_DIR}/game/csgo/addons/sourcemod/plugins/$(basename "$f" .sp).smx || true; \
   fi; \
   done; \
-  else \
-  echo "No SourceMod scripting directory found, skipping compile."; \
   fi
 
 COPY entrypoint.sh /entrypoint.sh
+
 RUN chmod +x /entrypoint.sh && \
   chown steam:steam /entrypoint.sh && \
   chown -R steam:steam /home/steam
