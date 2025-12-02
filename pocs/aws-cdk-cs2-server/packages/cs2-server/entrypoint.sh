@@ -18,6 +18,8 @@ LOG_FILE="/tmp/cs2.log"
 
 echo "[CS2] 🚀 Starting server in background..."
 "${CS2_BIN}" \
+  -game csgo \
+  -dll addons/metamod/bin/linuxsteamrt64/gamedll.so \
   -dedicated \
   -insecure \
   -usercon \

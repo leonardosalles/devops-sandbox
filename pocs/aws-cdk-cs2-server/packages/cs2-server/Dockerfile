@@ -34,7 +34,6 @@ RUN curl -L https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v
   unzip css.zip -d ${SRCDS_DIR}/game/csgo && \
   rm css.zip
 
-COPY addons ${SRCDS_DIR}/game/csgo/addons
 COPY cfg ${SRCDS_DIR}/game/csgo/cfg
 
 RUN if [ -d ${SRCDS_DIR}/game/csgo/addons/sourcemod/scripting ]; then \
