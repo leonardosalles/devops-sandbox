@@ -21,6 +21,8 @@ RUN dpkg --add-architecture i386 && \
 
 WORKDIR /tmp
 
+RUN mkdir -p /home/steam/cs2/game/csgo
+
 RUN curl -L https://mms.alliedmods.net/mmsdrop/2.0/mmsource-2.0.0-git1374-linux.tar.gz | \
   tar -xz -C ${SRCDS_DIR}/game/csgo
 
