@@ -5,6 +5,7 @@ SRCDS_DIR="/home/steam/cs2"
 ADDONS_DIR="${SRCDS_DIR}/game/csgo/addons"
 GAMEINFO_FILE="${SRCDS_DIR}/game/csgo/gameinfo.gi"
 CSS_PLUGINS_DIR="${ADDONS_DIR}/counterstrikesharp/plugins"
+STEAMCMD_DIR="/home/steam/steamcmd"
 
 mkdir -p "$ADDONS_DIR"
 
@@ -22,11 +23,29 @@ install_if_not_exists() {
   fi
 }
 
+echo "[BOOT] 📦 Checking/Downloading Workshop Assets (Sounds)..."
+
+gosu steam ${STEAMCMD_DIR}/steamcmd.sh \
+    +login anonymous \
+    +workshop_download_item 730 3461824328 \
+    +quit > /dev/null
+
+echo "[BOOT] 📂 Installing Workshop Assets to game folder..."
+
+WORKSHOP_DIR="${STEAMCMD_DIR}/steamapps/workshop/content/730/3461824328"
+
+if [ -d "$WORKSHOP_DIR" ]; then
+    cp -rn "$WORKSHOP_DIR"/* "${SRCDS_DIR}/game/csgo/"
+    echo "[BOOT] ✅ Assets installed successfully."
+else
+    echo "[BOOT] ⚠️ Warning: Workshop assets not found at $WORKSHOP_DIR"
+fi
+
 MM_BASE_URL="https://mms.alliedmods.net/mmsdrop/2.0/"
 MM_LATEST_FILE=$(curl -s "$MM_BASE_URL" | grep -o 'mmsource-2.0.[0-9]*-git[0-9]*-linux.tar.gz' | sort -V | tail -1)
 
 if [ -z "$MM_LATEST_FILE" ]; then
-    echo "[ADDONS] ⚠️ Failed to fetch latest Metamod version automatically. Using fallback..."
+    echo "[ADDONS] ⚠️ Failed to fetch latest Metamod. Using fallback..."
     MM_URL="https://mms.alliedmods.net/mmsdrop/2.0/mmsource-2.0.0-git1319-linux.tar.gz"
 else
     MM_URL="${MM_BASE_URL}${MM_LATEST_FILE}"
@@ -50,23 +69,6 @@ else
     echo "[ADDONS] WARNING: gameinfo.gi not found! Mods might not load."
 fi
 
-install_if_not_exists "MultiAddonManager" \
-  "$ADDONS_DIR/multiaddonmanager/bin/linuxsteamrt64/multiaddonmanager.so" \
-  "curl -L https://github.com/Source2ZE/MultiAddonManager/releases/download/v1.4.8/MultiAddonManager-v1.4.8-linux.tar.gz \
-    | tar -xz -C ${SRCDS_DIR}/game/csgo"
-
-MAM_CFG="${ADDONS_DIR}/multiaddonmanager.cfg"
-if [ ! -f "$MAM_CFG" ]; then
-  echo "[ADDONS] Configuring MultiAddonManager for QuakeSounds..."
-  cat <<EOF > "$MAM_CFG"
-{
-  "Workshop": {
-    "3461824328": { "enabled": 1 }
-  }
-}
-EOF
-fi
-
 CSS_URL="https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v1.0.347/counterstrikesharp-with-runtime-linux-1.0.347.zip"
 
 install_if_not_exists "CounterStrikeSharp" \
@@ -86,8 +88,9 @@ install_if_not_exists "QuakeSounds" \
 ADMINS_CFG="${ADDONS_DIR}/counterstrikesharp/configs/admins.json"
 
 if [ -n "${STEAM_ADMIN_IDS:-}" ]; then
+  rm -f "$ADMINS_CFG" 
   mkdir -p "$(dirname "$ADMINS_CFG")"
-  echo "[ADDONS] 👑 Configuring CSS Admins from Environment Variable..."
+  echo "[ADDONS] 👑 Configuring CSS Admins..."
   
   echo "{" > "$ADMINS_CFG"
   FIRST_ENTRY=1
@@ -99,7 +102,7 @@ if [ -n "${STEAM_ADMIN_IDS:-}" ]; then
         
         echo "  \"Admin_$id\": {" >> "$ADMINS_CFG"
         echo "    \"identity\": \"$id\"," >> "$ADMINS_CFG"
-        echo "    \"flags\": [\"@css/root\", \"@css/generic\"]" >> "$ADMINS_CFG"
+        echo "    \"flags\": [\"@css/root\", \"@css/generic\", \"@css/cvar\", \"@css/rcon\"]" >> "$ADMINS_CFG"
         echo -n "  }" >> "$ADMINS_CFG"
         
         echo "[ADDONS] -> Added Admin: $id"
@@ -108,15 +111,11 @@ if [ -n "${STEAM_ADMIN_IDS:-}" ]; then
   done
   echo "" >> "$ADMINS_CFG"
   echo "}" >> "$ADMINS_CFG"
-  
-  echo "[ADDONS] 🐛 Debug: admins.json content:"
-  cat "$ADMINS_CFG"
 fi
 
 echo "[CS2] 🔧 Fixing permissions recursively..."
 chown -R steam:steam "${SRCDS_DIR}"
 
-STEAMCMD_DIR=/home/steam/steamcmd
 SERVER_BIN_PATH="${SRCDS_DIR}/game/bin/linuxsteamrt64"
 CSGO_BIN_PATH="${SRCDS_DIR}/game/csgo/bin/linuxsteamrt64"
 STEAMCMD_BIN_PATH="${STEAMCMD_DIR}/linux64"
