@@ -84,9 +84,18 @@ install_if_not_exists "QuakeSounds" \
     && rm quake.zip"
 
 SIMPLE_ADMIN_PATH="${CSS_PLUGINS_DIR}/SimpleAdmin/SimpleAdmin.dll"
+
+echo "[ADDONS] Fetching valid SimpleAdmin URL..."
+SIMPLE_ADMIN_URL=$(curl -s https://api.github.com/repos/daffyyyy/SimpleAdmin/releases/latest | grep "browser_download_url" | cut -d '"' -f 4)
+
+if [ -z "$SIMPLE_ADMIN_URL" ]; then
+    echo "[ADDONS] ⚠️ Failed to fetch SimpleAdmin via API. Trying fallback..."
+    SIMPLE_ADMIN_URL="https://github.com/daffyyyy/SimpleAdmin/releases/latest/download/SimpleAdmin.zip"
+fi
+
 install_if_not_exists "SimpleAdmin" \
   "$SIMPLE_ADMIN_PATH" \
-  "curl -L https://github.com/daffyyyy/SimpleAdmin/releases/download/v0.0.9/SimpleAdmin-v0.0.9.zip -o simpleadmin.zip \
+  "curl -L \"${SIMPLE_ADMIN_URL}\" -o simpleadmin.zip \
     && unzip -q -o simpleadmin.zip -d ${CSS_PLUGINS_DIR} \
     && rm simpleadmin.zip"
 
