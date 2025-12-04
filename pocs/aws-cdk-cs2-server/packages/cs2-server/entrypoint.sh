@@ -28,17 +28,31 @@ echo "[BOOT] 📦 Checking/Downloading Workshop Assets (Sounds)..."
 gosu steam ${STEAMCMD_DIR}/steamcmd.sh \
     +login anonymous \
     +workshop_download_item 730 3461824328 \
-    +quit > /dev/null
+    +quit
 
-echo "[BOOT] 📂 Installing Workshop Assets to game folder..."
+echo "[BOOT] 📂 Locating Workshop Assets..."
 
-WORKSHOP_DIR="${STEAMCMD_DIR}/steamapps/workshop/content/730/3461824328"
 
-if [ -d "$WORKSHOP_DIR" ]; then
+PATH_1="${STEAMCMD_DIR}/steamapps/workshop/content/730/3461824328"
+PATH_2="/home/steam/Steam/steamapps/workshop/content/730/3461824328"
+
+if [ -d "$PATH_1" ]; then
+    WORKSHOP_DIR="$PATH_1"
+    echo "[BOOT] Found assets at: $PATH_1"
+elif [ -d "$PATH_2" ]; then
+    WORKSHOP_DIR="$PATH_2"
+    echo "[BOOT] Found assets at: $PATH_2"
+else
+    WORKSHOP_DIR=""
+fi
+
+if [ -n "$WORKSHOP_DIR" ]; then
+    echo "[BOOT] 🔄 Installing assets to game folder..."
     cp -rn "$WORKSHOP_DIR"/* "${SRCDS_DIR}/game/csgo/"
     echo "[BOOT] ✅ Assets installed successfully."
 else
-    echo "[BOOT] ⚠️ Warning: Workshop assets not found at $WORKSHOP_DIR"
+    echo "[BOOT] ⚠️ Warning: Workshop assets not found in standard paths. Sounds might be missing."
+    echo "[BOOT] Debug: Checked $PATH_1 and $PATH_2"
 fi
 
 MM_BASE_URL="https://mms.alliedmods.net/mmsdrop/2.0/"

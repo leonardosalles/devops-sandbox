@@ -99,7 +99,10 @@ export default function Page() {
   };
 
   const sendRconCommand = async (command: string) => {
-    if (!rconConnection || !selectedServer) return;
+    if (!selectedServer) {
+      console.log("No server");
+      return;
+    }
     try {
       setLoading(true);
       const response = await fetch(`/api/rcon`, {
