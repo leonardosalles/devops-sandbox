@@ -2,13 +2,14 @@ import * as cdk from "aws-cdk-lib";
 import {
   Stack,
   StackProps,
-  aws_lambda as lambda,
+  aws_dynamodb as dynamodb,
   aws_iam as iam,
+  aws_lambda as lambda,
 } from "aws-cdk-lib";
+import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
+import * as ssm from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
 import * as path from "path";
-import { aws_dynamodb as dynamodb } from "aws-cdk-lib";
-import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 
 export interface LambdaStackProps extends StackProps {
   table: dynamodb.Table;
@@ -20,6 +21,7 @@ export interface LambdaStackProps extends StackProps {
   gslt: string;
   imageAmiId: string;
   ec2InstanceType: string;
+  steamAdminIds: string;
 }
 
 export class LambdaStack extends Stack {
@@ -87,6 +89,7 @@ export class LambdaStack extends Stack {
       GSLT: props.gslt,
       IMAGE_AMI_ID: props.imageAmiId,
       EC2_INSTANCE_TYPE: props.ec2InstanceType,
+      STEAM_ADMIN_IDS: props.steamAdminIds,
     };
 
     this.controlFn = new NodejsFunction(this, "ControlFn", {
@@ -99,6 +102,11 @@ export class LambdaStack extends Stack {
     });
 
     props.table.grantReadWriteData(this.controlFn);
+
+    new ssm.StringParameter(this, "AdminIdsParam", {
+      parameterName: "/cs2/admin-ids",
+      stringValue: props.steamAdminIds,
+    });
 
     new cdk.CfnOutput(this, "Environment", {
       value: JSON.stringify(environment),

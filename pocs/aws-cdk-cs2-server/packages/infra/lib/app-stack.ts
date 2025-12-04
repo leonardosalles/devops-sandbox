@@ -1,5 +1,4 @@
 import * as cdk from "aws-cdk-lib";
-import * as apigw from "aws-cdk-lib/aws-apigateway";
 import { Construct } from "constructs";
 import { ApiStack } from "./api-stack";
 import { ComputeStack } from "./compute-stack";
@@ -35,6 +34,7 @@ export class AppStack extends cdk.Stack {
       gslt: process.env.GSLT!,
       imageAmiId: process.env.IMAGE_AMI_ID!,
       ec2InstanceType: process.env.EC2_INSTANCE_TYPE!,
+      steamAdminIds: process.env.STEAM_ADMIN_IDS!,
     });
 
     const apiStack = new ApiStack(this, "ApiStack", {

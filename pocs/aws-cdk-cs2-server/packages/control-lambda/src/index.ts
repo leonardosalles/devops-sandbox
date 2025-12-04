@@ -160,6 +160,11 @@ API_URL=$(aws ssm get-parameter \
   --name "/cs2/api-url" \
   --query "Parameter.Value" \
   --output text)
+STEAM_ADMIN_IDS=$(aws ssm get-parameter \
+  --region sa-east-1 \
+  --name "/cs2/admin-ids" \
+  --query "Parameter.Value" \
+  --output text)
 SERVER_ID="${id}"
 
 RCON_PASSWORD="${RCON_PASSWORD}"
@@ -250,6 +255,7 @@ echo "RCON_PASSWORD=\${RCON_PASSWORD}" >> /envfile
 echo "GSLT=\${GSLT}" >> /envfile
 
 echo "API_URL=\${API_URL}" >> /envfile
+echo "STEAM_ADMIN_IDS=\${STEAM_ADMIN_IDS}" >> /envfile
 echo "SERVER_ID=\${SERVER_ID}" >> /envfile
 
 docker run -d --name cs2 --env-file /envfile \\

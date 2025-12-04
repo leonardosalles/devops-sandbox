@@ -45,7 +45,7 @@ GSLT=your_gslt_token
 EC2_INSTANCE_TYPE=t3.medium
 DOCKER_IMAGE_NAME=cs2-server-modded
 IMAGE_AMI_ID=ami-00626b685a570fb6f
-
+STEAM_ADMIN_IDS="76561197960287930,ANOTHER_ID,ANOTHER_ONE"
 ```
 
 PS: ami-00626b685a570fb6f is the AMI ID for a pre-downloaded CS2 server image.
