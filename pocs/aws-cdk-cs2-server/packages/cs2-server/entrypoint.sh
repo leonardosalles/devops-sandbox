@@ -83,22 +83,6 @@ install_if_not_exists "QuakeSounds" \
     && unzip -q -o quake.zip -d ${CSS_PLUGINS_DIR} \
     && rm quake.zip"
 
-SIMPLE_ADMIN_PATH="${CSS_PLUGINS_DIR}/SimpleAdmin/SimpleAdmin.dll"
-
-echo "[ADDONS] Fetching valid SimpleAdmin URL..."
-SIMPLE_ADMIN_URL=$(curl -s https://api.github.com/repos/daffyyyy/SimpleAdmin/releases/latest | grep "browser_download_url" | cut -d '"' -f 4)
-
-if [ -z "$SIMPLE_ADMIN_URL" ]; then
-    echo "[ADDONS] ⚠️ Failed to fetch SimpleAdmin via API. Trying fallback..."
-    SIMPLE_ADMIN_URL="https://github.com/daffyyyy/SimpleAdmin/releases/latest/download/SimpleAdmin.zip"
-fi
-
-install_if_not_exists "SimpleAdmin" \
-  "$SIMPLE_ADMIN_PATH" \
-  "curl -L \"${SIMPLE_ADMIN_URL}\" -o simpleadmin.zip \
-    && unzip -q -o simpleadmin.zip -d ${CSS_PLUGINS_DIR} \
-    && rm simpleadmin.zip"
-
 ADMINS_CFG="${ADDONS_DIR}/counterstrikesharp/configs/admins.json"
 
 if [ -n "${STEAM_ADMIN_IDS:-}" ]; then
