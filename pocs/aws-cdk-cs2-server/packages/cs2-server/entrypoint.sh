@@ -36,13 +36,17 @@ WORKSHOP_FOUND=$(find /home/steam -type d -name "3461824328" -print -quit)
 if [ -n "$WORKSHOP_FOUND" ]; then
     echo "[BOOT] 🎯 Found assets at: $WORKSHOP_FOUND"
     
-    cat <<EOF > /tmp/extract_vpk.py
+    cat <<'EOF' > /tmp/extract_vpk.py
 import vpk
 import os
 import sys
 
-src_dir = "$WORKSHOP_FOUND"
-dest_dir = "${SRCDS_DIR}/game/csgo"
+src_dir = os.environ.get('WORKSHOP_FOUND')
+dest_dir = os.environ.get('DEST_DIR')
+
+if not src_dir or not dest_dir:
+    print("[PYTHON] Environment variables missing!")
+    sys.exit(1)
 
 print(f"[PYTHON] Scanning {src_dir} for VPKs...")
 
@@ -58,7 +62,7 @@ for root, dirs, files in os.walk(src_dir):
             try:
                 pak = vpk.open(vpk_path)
                 for filepath in pak:
-                    filepath_clean = filepath.replace('\\\\', '/')
+                    filepath_clean = filepath.replace('\\', '/')
                     
                     out_path = os.path.join(dest_dir, filepath_clean)
                     os.makedirs(os.path.dirname(out_path), exist_ok=True)
@@ -74,6 +78,9 @@ if not found:
 EOF
 
     echo "[BOOT] 🔨 Running VPK Extractor..."
+
+    export WORKSHOP_FOUND
+    export DEST_DIR="${SRCDS_DIR}/game/csgo"
     python3 /tmp/extract_vpk.py
     
     if [ -f "${SRCDS_DIR}/game/csgo/soundevents/soundevents_quakesounds.vsndevts_c" ]; then
@@ -115,7 +122,7 @@ install_if_not_exists "MultiAddonManager" \
 MAM_JSON="${ADDONS_DIR}/multiaddonmanager/config.json"
 mkdir -p "$(dirname "$MAM_JSON")"
 echo "[ADDONS] Configuring MAM via JSON to force client download (ID 3461824328)..."
-cat <<EOF > "$MAM_JSON"
+cat <<'EOF' > "$MAM_JSON"
 {
   "WorkshopItems": [
     "3461824328"
@@ -127,7 +134,7 @@ MAM_CFG_DIR="${SRCDS_DIR}/game/csgo/cfg/multiaddonmanager"
 mkdir -p "$MAM_CFG_DIR"
 MAM_CFG="${MAM_CFG_DIR}/multiaddonmanager.cfg"
 echo "[ADDONS] Configuring MAM via CFG (Backup strategy)..."
-cat <<EOF > "$MAM_CFG"
+cat <<'EOF' > "$MAM_CFG"
 mm_extra_addons "3461824328"
 mm_client_extra_addons "3461824328"
 mm_extra_addons_timeout 10
@@ -137,6 +144,8 @@ mm_cache_clients_duration 0
 mm_block_disconnect_messages 0
 mm_addon_debug 1
 EOF
+
+CSS_URL="https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v1.0.347/counterstrikesharp-with-runtime-linux-1.0.347.zip"
 
 install_if_not_exists "CounterStrikeSharp" \
   "$ADDONS_DIR/counterstrikesharp/bin/linuxsteamrt64/counterstrikesharp.so" \
@@ -153,6 +162,7 @@ if [ -f "$QS_CFG" ]; then
     sed -i 's/"ignore_bots": true/"ignore_bots": false/g' "$QS_CFG"
 fi
 
+STATUS_BLOCKER_URL="https://github.com/daffyyyy/CS2-SimpleAdmin/releases/download/build-1.7.8-beta-7/StatusBlocker-linux-1.7.8-beta-7.zip"
 install_if_not_exists "StatusBlocker" \
   "$ADDONS_DIR/StatusBlocker/bin/linuxsteamrt64/statusblocker.so" \
   "curl -L \"${STATUS_BLOCKER_URL}\" -o statusblocker.zip && unzip -q -o statusblocker.zip -d ${SRCDS_DIR}/game/csgo && rm statusblocker.zip"
@@ -220,7 +230,7 @@ gosu steam "${CS2_BIN}" \
   -insecure \
   -usercon \
   -console \
-  +sv_pure 0 \
+  +sv_pure 1 \
   +sv_setsteamaccount "${GSLT}" \
   +rcon_password "${RCON_PASSWORD}" \
   +hostname "${SERVER_HOSTNAME:-Watercooler Server}" \
