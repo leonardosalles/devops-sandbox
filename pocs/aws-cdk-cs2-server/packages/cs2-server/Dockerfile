@@ -12,13 +12,18 @@ RUN apt-get update && \
   unzip \
   ca-certificates \
   netcat-openbsd \
+  libsqlite3-0 \
+  python3 \
+  python3-pip \
+  python3-setuptools \
   gosu && \
   rm -rf /var/lib/apt/lists/*
 
-COPY cfg ${SRCDS_DIR}/game/csgo/cfg
+RUN pip3 install vpk --break-system-packages
 
+COPY cfg ${SRCDS_DIR}/game/csgo/cfg
 COPY addons_configs/QuakeSounds.json ${SRCDS_DIR}/game/csgo/addons/counterstrikesharp/configs/plugins/CS2-QuakeSounds/QuakeSounds.json
-COPY addons_configs/SimpleAdmin.json ${SRCDS_DIR}/game/csgo/addons/counterstrikesharp/configs/plugins/SimpleAdmin/SimpleAdmin.json
+COPY addons_configs/SimpleAdmin.json ${SRCDS_DIR}/game/csgo/addons/counterstrikesharp/configs/plugins/CS2-SimpleAdmin/CS2-SimpleAdmin.json
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh && \
