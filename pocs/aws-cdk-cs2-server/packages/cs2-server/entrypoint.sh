@@ -63,10 +63,13 @@ for root, dirs, files in os.walk(src_dir):
                 pak = vpk.open(vpk_path)
                 for filepath in pak:
                     filepath_clean = filepath.replace('\\', '/')
-                    
+                    if filepath_clean.startswith("csgo/"):
+                        filepath_clean = filepath_clean[5:]
+                    elif filepath_clean.startswith("/csgo/"):
+                        filepath_clean = filepath_clean[6:]
+
                     out_path = os.path.join(dest_dir, filepath_clean)
                     os.makedirs(os.path.dirname(out_path), exist_ok=True)
-                    
                     pak.get_file(filepath).save(out_path)
                     
                 print(f"[PYTHON] ✅ Successfully extracted {vpk_path}")
@@ -78,7 +81,6 @@ if not found:
 EOF
 
     echo "[BOOT] 🔨 Running VPK Extractor..."
-
     export WORKSHOP_FOUND
     export DEST_DIR="${SRCDS_DIR}/game/csgo"
     python3 /tmp/extract_vpk.py
@@ -87,10 +89,7 @@ EOF
         echo "[BOOT] ✅ SUCCESS: SoundEvents file extracted correctly!"
     else
         echo "[BOOT] ⚠️ WARNING: Extraction finished but vsndevts file is missing."
-        echo "[BOOT] Debug listing of game/csgo/soundevents:"
-        ls -la "${SRCDS_DIR}/game/csgo/soundevents/" || true
     fi
-
 else
     echo "[BOOT] ❌ CRITICAL: Workshop folder not found!"
 fi
@@ -121,7 +120,7 @@ install_if_not_exists "MultiAddonManager" \
 
 MAM_JSON="${ADDONS_DIR}/multiaddonmanager/config.json"
 mkdir -p "$(dirname "$MAM_JSON")"
-echo "[ADDONS] Configuring MAM via JSON to force client download (ID 3461824328)..."
+echo "[ADDONS] Configuring MAM (JSON)..."
 cat <<'EOF' > "$MAM_JSON"
 {
   "WorkshopItems": [
@@ -133,20 +132,15 @@ EOF
 MAM_CFG_DIR="${SRCDS_DIR}/game/csgo/cfg/multiaddonmanager"
 mkdir -p "$MAM_CFG_DIR"
 MAM_CFG="${MAM_CFG_DIR}/multiaddonmanager.cfg"
-echo "[ADDONS] Configuring MAM via CFG (Backup strategy)..."
+echo "[ADDONS] Configuring MAM (CFG)..."
 cat <<'EOF' > "$MAM_CFG"
 mm_extra_addons "3461824328"
 mm_client_extra_addons "3461824328"
 mm_extra_addons_timeout 10
 mm_addon_mount_download 1
-mm_cache_clients_with_addons 1
-mm_cache_clients_duration 0
-mm_block_disconnect_messages 0
-mm_addon_debug 1
 EOF
 
 CSS_URL="https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v1.0.347/counterstrikesharp-with-runtime-linux-1.0.347.zip"
-
 install_if_not_exists "CounterStrikeSharp" \
   "$ADDONS_DIR/counterstrikesharp/bin/linuxsteamrt64/counterstrikesharp.so" \
   "curl -L \"${CSS_URL}\" -o css.zip && unzip -q -o css.zip -d ${SRCDS_DIR}/game/csgo && rm css.zip"
@@ -156,11 +150,70 @@ install_if_not_exists "QuakeSounds" \
   "$QS_PLUGIN_PATH" \
   "curl -L https://github.com/Kandru/cs2-quake-sounds/releases/download/25.11.2/cs2-quake-sounds-release-25.11.2.zip -o quake.zip && unzip -q -o quake.zip -d ${CSS_PLUGINS_DIR} && rm quake.zip"
 
-QS_CFG="${ADDONS_DIR}/counterstrikesharp/configs/plugins/CS2-QuakeSounds/QuakeSounds.json"
-if [ -f "$QS_CFG" ]; then
-    echo "[ADDONS] 🤖 Forcing 'ignore_bots: false'..."
-    sed -i 's/"ignore_bots": true/"ignore_bots": false/g' "$QS_CFG"
-fi
+echo "[ADDONS] 📄 Generating QuakeSounds configuration (Hardcoded Force)..."
+
+write_qs_config() {
+cat <<'EOF' > "$1"
+{
+  "enabled": true,
+  "debug": false,
+  "global": {
+    "enabled_during_warmup": true,
+    "play_on_entity": "player",
+    "sound_hearable_by": "all",
+    "ignore_bots": false,
+    "ignore_world_damage": true
+  },
+  "precache": {
+    "soundevent_file": "soundevents/soundevents_quakesounds.vsndevts"
+  },
+  "count_self_kills": false,
+  "count_team_kills": false,
+  "reset_kills_on_death": true,
+  "reset_kills_on_round_start": true,
+  "commands": {
+    "settings": "qs",
+    "settings_menu": false
+  },
+  "messages": {
+    "enable_center_message": true,
+    "center_message_type": "default",
+    "enable_chat_message": true
+  },
+  "sound_priorities": {
+    "special_events": 1,
+    "weapons": 2,
+    "kill_streak": 3
+  },
+  "sounds": {
+    "2": { "en": "Double Kill", "pt": "Double Kill", "_sound": "QuakeSoundsD.Doublekill" },
+    "3": { "en": "Triple Kill", "pt": "Triple Kill", "_sound": "QuakeSoundsD.Triplekill" },
+    "5": { "en": "Multi Kill", "pt": "Multi Kill", "_sound": "QuakeSoundsD.Multikill" },
+    "6": { "en": "Rampage", "pt": "Rampage", "_sound": "QuakeSoundsD.Rampage" },
+    "7": { "en": "Killing Spree", "pt": "Killing Spree", "_sound": "QuakeSoundsD.Killingspree" },
+    "8": { "en": "Dominating", "pt": "Dominating", "_sound": "QuakeSoundsD.Dominating" },
+    "9": { "en": "Impressive", "pt": "Impressive", "_sound": "QuakeSoundsD.Impressive" },
+    "10": { "en": "Unstoppable", "pt": "Unstoppable", "_sound": "QuakeSoundsD.Unstoppable" },
+    "firstblood": { "en": "First Blood", "pt": "First Blood", "_sound": "QuakeSoundsD.Firstblood" },
+    "headshot": { "en": "Headshot", "pt": "Headshot", "_sound": "QuakeSoundsD.Headshot" },
+    "knifekill": { "en": "Knife Kill", "pt": "Na Faca!", "_sound": "QuakeSoundsD.Haha" },
+    "round_start": { "_sound": "QuakeSoundsD.Prepare" },
+    "round_freeze_end": { "_sound": "QuakeSoundsD.Play" }
+  },
+  "ConfigVersion": 1
+}
+EOF
+}
+
+QS_CFG_1="${ADDONS_DIR}/counterstrikesharp/configs/plugins/CS2-QuakeSounds/QuakeSounds.json"
+mkdir -p "$(dirname "$QS_CFG_1")"
+write_qs_config "$QS_CFG_1"
+echo "[ADDONS] Config written to: $QS_CFG_1"
+
+QS_CFG_2="${ADDONS_DIR}/counterstrikesharp/configs/plugins/QuakeSounds/QuakeSounds.json"
+mkdir -p "$(dirname "$QS_CFG_2")"
+write_qs_config "$QS_CFG_2"
+echo "[ADDONS] Config written to: $QS_CFG_2"
 
 STATUS_BLOCKER_URL="https://github.com/daffyyyy/CS2-SimpleAdmin/releases/download/build-1.7.8-beta-7/StatusBlocker-linux-1.7.8-beta-7.zip"
 install_if_not_exists "StatusBlocker" \
@@ -188,10 +241,38 @@ install_if_not_exists "SimpleAdmin" \
   "curl -L \"${SIMPLE_ADMIN_URL}\" -o simpleadmin.zip && unzip -q -o simpleadmin.zip -d ${SRCDS_DIR}/game/csgo && rm simpleadmin.zip"
 
 SIMPLE_ADMIN_CFG_DIR="${ADDONS_DIR}/counterstrikesharp/configs/plugins/CS2-SimpleAdmin"
-if [ ! -f "${SIMPLE_ADMIN_CFG_DIR}/CS2-SimpleAdmin.json" ]; then
-  mkdir -p "$SIMPLE_ADMIN_CFG_DIR"
-  echo '{ "Database": { "Host": "localhost", "Port": 3306, "User": "root", "Password": "", "Database": "cs2_simpleadmin", "Driver": "SQLite", "Prefix": "sa_" }, "ServerId": 1, "Debug": false }' > "${SIMPLE_ADMIN_CFG_DIR}/CS2-SimpleAdmin.json"
-fi
+mkdir -p "$SIMPLE_ADMIN_CFG_DIR"
+SIMPLE_ADMIN_CFG="${SIMPLE_ADMIN_CFG_DIR}/CS2-SimpleAdmin.json"
+
+echo "[ADDONS] 📄 Generating SimpleAdmin configuration (DB + Menu)..."
+cat <<'EOF' > "$SIMPLE_ADMIN_CFG"
+{
+  "Database": {
+    "Host": "localhost",
+    "Port": 3306,
+    "User": "root",
+    "Password": "",
+    "Database": "cs2_simpleadmin",
+    "Driver": "SQLite",
+    "Prefix": "sa_"
+  },
+  "ServerId": 1,
+  "Debug": false,
+  "ChatPrefix": "{Green}[Admin]{White}",
+  "OpenMenuCommands": ["admin", "css_admin", "menu"], 
+  "AdminMenu": {
+    "Comandos Rapidos": {
+      "Kikar Todos os Bots": "bot_kick",
+      "Reiniciar Partida (Live)": "mp_restartgame 1",
+      "Remover Freezetime": "mp_freezetime 0; say Freezetime Removido!",
+      "Ativar Freezetime (15s)": "mp_freezetime 15; say Freezetime Restaurado!",
+      "Dinheiro Infinito": "mp_maxmoney 60000; mp_startmoney 60000; mp_afterroundmoney 60000; say Ta chovendo dinheiro!",
+      "Travar Bots (Stop)": "bot_stop 1",
+      "Destravar Bots (Move)": "bot_stop 0"
+    }
+  }
+}
+EOF
 
 ADMINS_CFG="${ADDONS_DIR}/counterstrikesharp/configs/admins.json"
 if [ -n "${STEAM_ADMIN_IDS:-}" ]; then
@@ -230,7 +311,7 @@ gosu steam "${CS2_BIN}" \
   -insecure \
   -usercon \
   -console \
-  +sv_pure 1 \
+  +sv_pure 0 \
   +sv_setsteamaccount "${GSLT}" \
   +rcon_password "${RCON_PASSWORD}" \
   +hostname "${SERVER_HOSTNAME:-Watercooler Server}" \
