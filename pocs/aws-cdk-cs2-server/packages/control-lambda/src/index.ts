@@ -25,6 +25,7 @@ const REPO_URI = process.env.REPO_URI!;
 const AWS_REGION = process.env.REGION || process.env.AWS_REGION || "sa-east-1";
 const RCON_PASSWORD = process.env.RCON_PASSWORD || "";
 const GSLT = process.env.GSLT || "";
+const MAP = process.env.MAP || "";
 
 const KEY_NAME = "cs2-key";
 const SECURITY_GROUP_ID = process.env.SECURITY_GROUP_ID!;
@@ -169,6 +170,7 @@ SERVER_ID="${id}"
 
 RCON_PASSWORD="${RCON_PASSWORD}"
 GSLT="${GSLT}"
+MAP="${MAP}"
 AWS_REGION="${AWS_REGION}"
 REPO_URI="${REPO_URI}"
 REGISTRY_URI="${registryUri}"

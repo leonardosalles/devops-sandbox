@@ -19,6 +19,7 @@ export interface LambdaStackProps extends StackProps {
   securityGroup: any;
   rconPassword: string;
   gslt: string;
+  map: string;
   imageAmiId: string;
   ec2InstanceType: string;
   steamAdminIds: string;
@@ -87,6 +88,7 @@ export class LambdaStack extends Stack {
 
       RCON_PASSWORD: props.rconPassword,
       GSLT: props.gslt,
+      MAP: props.map,
       IMAGE_AMI_ID: props.imageAmiId,
       EC2_INSTANCE_TYPE: props.ec2InstanceType,
       STEAM_ADMIN_IDS: props.steamAdminIds,
