@@ -16,17 +16,25 @@ RUN apt-get update && \
   python3 \
   python3-pip \
   python3-setuptools \
-  gosu && \
+  gosu \
+  nodejs \
+  npm && \
   rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install vpk --break-system-packages
 
 COPY cfg ${SRCDS_DIR}/game/csgo/cfg
 
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh && \
-  chown steam:steam /entrypoint.sh
+WORKDIR /app
+COPY package.json /app/package.json
+RUN npm install
+
+COPY addons_configs /app/addons_configs
+
+COPY index.js /app/index.js
+
+RUN chown -R steam:steam /app
 
 EXPOSE 27015/tcp 27015/udp 27020/udp 27005/udp
 
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["node", "/app/index.js"]

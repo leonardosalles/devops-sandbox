@@ -1,0 +1,48 @@
+{
+  "enabled": true,
+  "debug": false,
+  "global": {
+    "enabled_during_warmup": true,
+    "play_on_entity": "player",
+    "sound_hearable_by": "all",
+    "ignore_bots": false,
+    "ignore_world_damage": true
+  },
+  "precache": {
+    "soundevent_file": "soundevents/soundevents_quakesounds.vsndevts"
+  },
+  "count_self_kills": false,
+  "count_team_kills": false,
+  "reset_kills_on_death": true,
+  "reset_kills_on_round_start": true,
+  "commands": {
+    "settings": "qs",
+    "settings_menu": false
+  },
+  "messages": {
+    "enable_center_message": true,
+    "center_message_type": "default",
+    "enable_chat_message": true
+  },
+  "sound_priorities": {
+    "special_events": 1,
+    "weapons": 2,
+    "kill_streak": 3
+  },
+  "sounds": {
+    "2": { "en": "Double Kill", "pt": "Double Kill", "_sound": "QuakeSoundsD.Doublekill" },
+    "3": { "en": "Triple Kill", "pt": "Triple Kill", "_sound": "QuakeSoundsD.Triplekill" },
+    "5": { "en": "Multi Kill", "pt": "Multi Kill", "_sound": "QuakeSoundsD.Multikill" },
+    "6": { "en": "Rampage", "pt": "Rampage", "_sound": "QuakeSoundsD.Rampage" },
+    "7": { "en": "Killing Spree", "pt": "Killing Spree", "_sound": "QuakeSoundsD.Killingspree" },
+    "8": { "en": "Dominating", "pt": "Dominating", "_sound": "QuakeSoundsD.Dominating" },
+    "9": { "en": "Impressive", "pt": "Impressive", "_sound": "QuakeSoundsD.Impressive" },
+    "10": { "en": "Unstoppable", "pt": "Unstoppable", "_sound": "QuakeSoundsD.Unstoppable" },
+    "firstblood": { "en": "First Blood", "pt": "First Blood", "_sound": "QuakeSoundsD.Firstblood" },
+    "headshot": { "en": "Headshot", "pt": "Headshot", "_sound": "QuakeSoundsD.Headshot" },
+    "knifekill": { "en": "Knife Kill", "pt": "Na Faca!", "_sound": "QuakeSoundsD.Haha" },
+    "round_start": { "_sound": "QuakeSoundsD.Prepare" },
+    "round_freeze_end": { "_sound": "QuakeSoundsD.Play" }
+  },
+  "ConfigVersion": 1
+}

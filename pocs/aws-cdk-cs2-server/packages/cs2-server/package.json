@@ -1,0 +1,10 @@
+{
+  "name": "cs2-server",
+  "version": "1.0.0",
+  "description": "CS2 Dedicated Server Manager",
+  "main": "index.js",
+  "dependencies": {
+    "adm-zip": "^0.5.10",
+    "fs-extra": "^11.2.0"
+  }
+}
