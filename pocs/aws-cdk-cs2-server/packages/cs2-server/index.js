@@ -264,7 +264,6 @@ for root, dirs, files in os.walk(src):
             '-insecure',
             '-usercon',
             '-console',
-            '+sv_pure', '0',
             '+sv_setsteamaccount', ENV.GSLT,
             '+rcon_password', ENV.RCON_PASS,
             '+hostname', ENV.HOSTNAME,
