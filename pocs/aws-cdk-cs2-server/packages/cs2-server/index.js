@@ -18,20 +18,11 @@ PATHS.PLUGINS = path.join(PATHS.ADDONS, "counterstrikesharp/plugins");
 PATHS.GAME_ROOT = path.join(PATHS.SRCDS, "game/csgo");
 
 const DOWNLOAD_URLS = {
-    METAMOD: "https://mms.alliedmods.net/mmsdrop/2.0/mmsource-2.0.0-git1379-linux.tar.gz",
+    METAMOD: "https://mms.alliedmods.net/mmsdrop/2.0/mmsource-2.0.0-git1379-linux.tar.gz", 
     MAM: "https://github.com/Source2ZE/MultiAddonManager/releases/download/v1.4.8/MultiAddonManager-v1.4.8-linux.tar.gz",
-    CSS: "https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v1.0.347/counterstrikesharp-with-runtime-linux-1.0.347.zip",
-    QUAKE_SOUNDS: "https://github.com/Kandru/cs2-quake-sounds/releases/download/25.11.2/cs2-quake-sounds-release-25.11.2.zip",
-    SIMPLE_ADMIN_BUNDLE: {
-        STATUS_BLOCKER: "https://github.com/daffyyyy/CS2-SimpleAdmin/releases/download/build-1.7.8-beta-7/StatusBlocker-linux-1.7.8-beta-7.zip",
-        ANYBASE: "https://github.com/NickFox007/AnyBaseLibCS2/releases/download/0.9.4/AnyBaseLib.zip",
-        PLAYER_SETTINGS: "https://github.com/NickFox007/PlayerSettingsCS2/releases/download/0.9.3/PlayerSettings.zip",
-        MENU_MANAGER: "https://github.com/NickFox007/MenuManagerCS2/releases/download/1.4.1/MenuManager.zip",
-        SIMPLE_ADMIN: "https://github.com/daffyyyy/CS2-SimpleAdmin/releases/download/build-1.7.8-beta-7/CS2-SimpleAdmin-1.7.8-beta-7.zip"
-    }
+    QUAKE_SOUNDS: "https://github.com/Kandru/cs2-quake-sounds/releases/download/25.11.2/cs2-quake-sounds-release-25.11.2.zip"
 };
 
-const MM_BASE_URL = "https://mms.alliedmods.net/mmsdrop/2.0/";
 const WORKSHOP_ID_QUAKE = "3461824328";
 
 const localQuakeConfig = require('./addons_configs/QuakeSounds.json');
@@ -65,33 +56,24 @@ class ServerManager {
         console.log("-----------------------------------");
     }
 
-    async getLatestUrl(baseUrl, regexPattern) {
+    async getGitHubLatestUrl(repo, assetFilter) {
         try {
-            console.log(`[NODE] 🔍 Scraping latest version from ${baseUrl}...`);
-            const response = await fetch(baseUrl);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            console.log(`[NODE] 🔍 Checking latest release for ${repo}...`);
+            const response = await fetch(`https://api.github.com/repos/${repo}/releases/latest`);
+            if (!response.ok) throw new Error(`GitHub API Error: ${response.status}`);
             
-            const html = await response.text();
-            const regex = new RegExp(regexPattern, 'g');
+            const data = await response.json();
+            if (!data.assets) throw new Error("No assets found");
+
+            const asset = data.assets.find(a => a.name.includes(assetFilter) && a.name.endsWith('.zip'));
             
-            const matches = [...html.matchAll(regex)].map(m => m[0]);
-            
-            if (!matches || matches.length === 0) return null;
-            
-            matches.sort((a, b) => {
-                const getBuild = (s) => {
-                    const m = s.match(/-git(\d+)-/);
-                    return m ? parseInt(m[1]) : 0;
-                };
-                return getBuild(a) - getBuild(b);
-            });
-            
-            const latestFile = matches[matches.length - 1];
-            console.log(`[NODE] 🔄 Latest version found: ${latestFile}`);
-            return `${baseUrl}${latestFile}`;
-            
+            if (asset) {
+                console.log(`[NODE] 🔄 Found latest: ${asset.name}`);
+                return asset.browser_download_url;
+            }
+            return null;
         } catch (e) {
-            console.error(`[NODE] ⚠️ Failed to scrape latest version: ${e.message}`);
+            console.error(`[NODE] ⚠️ Failed fetch ${repo}: ${e.message}`);
             return null;
         }
     }
@@ -100,12 +82,8 @@ class ServerManager {
         try {
             const response = await fetch(url);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            
             const fileStream = fs.createWriteStream(destPath);
-            const nodeStream = Readable.fromWeb(response.body);
-            const stream = nodeStream.pipe(fileStream);
-            
-            await finished(stream);
+            await finished(Readable.fromWeb(response.body).pipe(fileStream));
         } catch (error) {
             console.error(`❌ Error downloading ${url}:`, error.message);
             throw error;
@@ -190,17 +168,11 @@ for root, dirs, files in os.walk(src):
     }
 
     async setupMetamod() {
-        console.log("[NODE] Checking Metamod...");
-        
-        let mmUrl = await this.getLatestUrl(MM_BASE_URL, 'mmsource-2\\.0\\.[0-9]+-git[0-9]+-linux\\.tar\\.gz');
-        if (!mmUrl) {
-             console.log("[NODE] ⚠️ Could not fetch latest Metamod. Using fallback URL.");
-             mmUrl = DOWNLOAD_URLS.METAMOD;
-        }
+        console.log("[NODE] Installing Metamod (Fixed Version 1379)...");
 
-        await this.downloadFile(mmUrl, "/tmp/mm.tar.gz");
+        await this.downloadFile(DOWNLOAD_URLS.METAMOD, "/tmp/mm.tar.gz");
         execSync(`tar -xzf /tmp/mm.tar.gz -C ${PATHS.GAME_ROOT}`);
-        console.log("[NODE] Metamod installed/updated.");
+        console.log("[NODE] Metamod installed.");
 
         if (fs.existsSync(PATHS.GAMEINFO)) {
             let content = fs.readFileSync(PATHS.GAMEINFO, 'utf8');
@@ -226,29 +198,42 @@ for root, dirs, files in os.walk(src):
     }
 
     async setupCounterStrikeSharp() {
-        await this.installPlugin("CounterStrikeSharp", DOWNLOAD_URLS.CSS, PATHS.GAME_ROOT);
+        // Busca a ultima versão do CSS dinamicamente para evitar incompatibilidade
+        const cssUrl = await this.getGitHubLatestUrl("roflmuffin/CounterStrikeSharp", "with-runtime-linux");
+        if (cssUrl) {
+             await this.installPlugin("CounterStrikeSharp", cssUrl, PATHS.GAME_ROOT);
+        } else {
+             console.log("[NODE] ⚠️ CSS fetch failed, using fallback (might be outdated).");
+             await this.installPlugin("CounterStrikeSharp", "https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v1.0.347/counterstrikesharp-with-runtime-linux-1.0.347.zip", PATHS.GAME_ROOT);
+        }
     }
 
     async setupQuakeSounds() {
         await this.installPlugin("QuakeSounds", DOWNLOAD_URLS.QUAKE_SOUNDS, PATHS.PLUGINS);
         
         localQuakeConfig.global.ignore_bots = false;
-        
         const configPath = path.join(PATHS.ADDONS, "counterstrikesharp/configs/plugins/CS2-QuakeSounds/QuakeSounds.json");
         this.writeConfig(configPath, localQuakeConfig);
     }
 
     async setupSimpleAdmin() {
-        const deps = DOWNLOAD_URLS.SIMPLE_ADMIN_BUNDLE;
-        
-        await this.installPlugin("StatusBlocker", deps.STATUS_BLOCKER, PATHS.ADDONS);
-        await this.installPlugin("AnyBaseLibCS2", deps.ANYBASE, PATHS.GAME_ROOT);
-        await this.installPlugin("PlayerSettings", deps.PLAYER_SETTINGS, PATHS.GAME_ROOT);
-        await this.installPlugin("MenuManagerCS2", deps.MENU_MANAGER, PATHS.GAME_ROOT);
-        await this.installPlugin("SimpleAdmin", deps.SIMPLE_ADMIN, PATHS.GAME_ROOT);
+        const FALLBACKS = DOWNLOAD_URLS.SIMPLE_ADMIN_BUNDLE;
+
+        const sbUrl = await this.getGitHubLatestUrl("daffyyyy/StatusBlocker", "linux") || FALLBACKS.STATUS_BLOCKER;
+        await this.installPlugin("StatusBlocker", sbUrl, PATHS.ADDONS);
+
+        const abUrl = await this.getGitHubLatestUrl("NickFox007/AnyBaseLibCS2", ".zip") || FALLBACKS.ANYBASE;
+        await this.installPlugin("AnyBaseLibCS2", abUrl, PATHS.GAME_ROOT);
+
+        const psUrl = await this.getGitHubLatestUrl("NickFox007/PlayerSettingsCS2", ".zip") || FALLBACKS.PLAYER_SETTINGS;
+        await this.installPlugin("PlayerSettings", psUrl, PATHS.GAME_ROOT);
+
+        const mmUrl = await this.getGitHubLatestUrl("NickFox007/MenuManagerCS2", ".zip") || FALLBACKS.MENU_MANAGER;
+        await this.installPlugin("MenuManagerCS2", mmUrl, PATHS.GAME_ROOT);
+
+        await this.installPlugin("SimpleAdmin", FALLBACKS.SIMPLE_ADMIN, PATHS.GAME_ROOT);
 
         const configPath = path.join(PATHS.ADDONS, "counterstrikesharp/configs/plugins/CS2-SimpleAdmin/CS2-SimpleAdmin.json");
-        
         if (!localSimpleAdminConfig.Database) {
             localSimpleAdminConfig.Database = { "Driver": "SQLite", "Database": "cs2_simpleadmin", "Prefix": "sa_" };
         }
@@ -302,6 +287,7 @@ for root, dirs, files in os.walk(src):
             '-insecure',
             '-usercon',
             '-console',
+            '+sv_pure', '0',
             '+sv_setsteamaccount', ENV.GSLT,
             '+rcon_password', ENV.RCON_PASS,
             '+hostname', ENV.HOSTNAME,
