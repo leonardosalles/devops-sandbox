@@ -18,7 +18,7 @@ PATHS.PLUGINS = path.join(PATHS.ADDONS, "counterstrikesharp/plugins");
 PATHS.GAME_ROOT = path.join(PATHS.SRCDS, "game/csgo");
 
 const DOWNLOAD_URLS = {
-    METAMOD: "https://mms.alliedmods.net/mmsdrop/2.0/mmsource-2.0.0-git1319-linux.tar.gz",
+    METAMOD: "https://mms.alliedmods.net/mmsdrop/2.0/mmsource-2.0.0-git1379-linux.tar.gz",
     MAM: "https://github.com/Source2ZE/MultiAddonManager/releases/download/v1.4.8/MultiAddonManager-v1.4.8-linux.tar.gz",
     CSS: "https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v1.0.347/counterstrikesharp-with-runtime-linux-1.0.347.zip",
     QUAKE_SOUNDS: "https://github.com/Kandru/cs2-quake-sounds/releases/download/25.11.2/cs2-quake-sounds-release-25.11.2.zip",
@@ -158,12 +158,11 @@ for root, dirs, files in os.walk(src):
     }
 
     async setupMetamod() {
-        console.log("[NODE] Checking Metamod...");
-        if (!fs.existsSync(path.join(PATHS.ADDONS, "metamod"))) {
-            await this.downloadFile(DOWNLOAD_URLS.METAMOD, "/tmp/mm.tar.gz");
-            execSync(`tar -xzf /tmp/mm.tar.gz -C ${PATHS.GAME_ROOT}`);
-            console.log("[NODE] Metamod installed.");
-        }
+        console.log("[NODE] Updating/Installing Metamod...");
+        // REMOVIDO check if exists para forçar update e corrigir versão antiga
+        await this.downloadFile(DOWNLOAD_URLS.METAMOD, "/tmp/mm.tar.gz");
+        execSync(`tar -xzf /tmp/mm.tar.gz -C ${PATHS.GAME_ROOT}`);
+        console.log("[NODE] Metamod installed.");
 
         if (fs.existsSync(PATHS.GAMEINFO)) {
             let content = fs.readFileSync(PATHS.GAMEINFO, 'utf8');
