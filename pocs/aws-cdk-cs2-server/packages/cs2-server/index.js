@@ -31,7 +31,7 @@ const DOWNLOAD_URLS = {
     }
 };
 
-const WORKSHOP_ID_QUAKE_SOUNDS = "3461824328";
+const WORKSHOP_ID_QUAKE = "3461824328";
 
 const localQuakeConfig = require('./addons_configs/QuakeSounds.json');
 const localSimpleAdminConfig = require('./addons_configs/SimpleAdmin.json');
@@ -42,7 +42,7 @@ const ENV = {
     SERVER_ID: process.env.SERVER_ID,
     RCON_PASS: process.env.RCON_PASSWORD || "changeme",
     HOSTNAME: process.env.SERVER_HOSTNAME || "CS2 Server",
-    MAP: process.env.MAP || "de_inferno",
+    INITIAL_MAP: process.env.INITIAL_MAP || "de_inferno",
     GSLT: process.env.GSLT || ""
 };
 
@@ -58,7 +58,7 @@ class ServerManager {
         console.log("--- ENVIRONMENT VARIABLES CHECK ---");
         console.log(`STEAM_ADMIN_IDS: ${ENV.ADMIN_IDS}`);
         console.log(`SERVER_HOSTNAME: ${ENV.HOSTNAME}`);
-        console.log(`MAP: ${ENV.MAP}`);
+        console.log(`INITIAL_MAP: ${ENV.INITIAL_MAP}`);
         console.log(`API_URL: ${ENV.API_URL || 'NOT SET'}`);
         console.log(`GSLT: ${ENV.GSLT ? '****** (SET)' : 'NOT SET'}`);
         console.log("-----------------------------------");
@@ -111,16 +111,15 @@ class ServerManager {
     }
 
     async setupWorkshop() {
-        console.log(`[BOOT] 📦 Downloading Workshop assets (${WORKSHOP_ID_QUAKE_SOUNDS})...`);
+        console.log(`[BOOT] 📦 Downloading Workshop assets (${WORKSHOP_ID_QUAKE})...`);
         try {
-            execSync(`gosu steam ${PATHS.STEAMCMD}/steamcmd.sh +login anonymous +workshop_download_item 730 ${WORKSHOP_ID_QUAKE_SOUNDS} +quit > /dev/null`, { stdio: 'inherit' });
+            execSync(`gosu steam ${PATHS.STEAMCMD}/steamcmd.sh +login anonymous +workshop_download_item 730 ${WORKSHOP_ID_QUAKE} +quit > /dev/null`, { stdio: 'inherit' });
 
-            const findCmd = `find /home/steam -type d -name "${WORKSHOP_ID_QUAKE_SOUNDS}" -print -quit`;
+            const findCmd = `find /home/steam -type d -name "${WORKSHOP_ID_QUAKE}" -print -quit`;
             const workshopPath = execSync(findCmd).toString().trim();
 
             if (workshopPath) {
                 console.log(`[BOOT] 🎯 Assets found at: ${workshopPath}`);
-                // Python script for VPK extraction
                 const pythonScript = `
 import vpk, os
 src = "${workshopPath}"
@@ -164,7 +163,7 @@ for root, dirs, files in os.walk(src):
 
         if (fs.existsSync(PATHS.GAMEINFO)) {
             let content = fs.readFileSync(PATHS.GAMEINFO, 'utf8');
-            content = content.replace(/Game\s+csgo\/addons\/quakesounds_assets/g, ''); // Cleanup old
+            content = content.replace(/Game\s+csgo\/addons\/quakesounds_assets/g, '');
             if (!content.includes("Game\tcsgo/addons/metamod")) {
                 console.log("[NODE] Applying patch to gameinfo.gi...");
                 content = content.replace(/Game\s+csgo\s*$/m, "         Game    csgo/addons/metamod\r\n         Game    csgo");
@@ -178,10 +177,10 @@ for root, dirs, files in os.walk(src):
         
         this.writeConfig(
             path.join(PATHS.ADDONS, "multiaddonmanager/config.json"), 
-            { "WorkshopItems": [WORKSHOP_ID_QUAKE_SOUNDS] }
+            { "WorkshopItems": [WORKSHOP_ID_QUAKE] }
         );
 
-        const cfgContent = `mm_extra_addons "${WORKSHOP_ID_QUAKE_SOUNDS}"\nmm_client_extra_addons "${WORKSHOP_ID_QUAKE_SOUNDS}"\nmm_extra_addons_timeout 10\nmm_addon_mount_download 1`;
+        const cfgContent = `mm_extra_addons "${WORKSHOP_ID_QUAKE}"\nmm_client_extra_addons "${WORKSHOP_ID_QUAKE}"\nmm_extra_addons_timeout 10\nmm_addon_mount_download 1`;
         this.writeConfig(path.join(PATHS.GAME_ROOT, "cfg/multiaddonmanager/multiaddonmanager.cfg"), cfgContent);
     }
 
@@ -205,7 +204,6 @@ for root, dirs, files in os.walk(src):
         await this.installPlugin("AnyBaseLibCS2", deps.ANYBASE, PATHS.GAME_ROOT);
         await this.installPlugin("PlayerSettings", deps.PLAYER_SETTINGS, PATHS.GAME_ROOT);
         await this.installPlugin("MenuManagerCS2", deps.MENU_MANAGER, PATHS.GAME_ROOT);
-        
         await this.installPlugin("SimpleAdmin", deps.SIMPLE_ADMIN, PATHS.GAME_ROOT);
 
         const configPath = path.join(PATHS.ADDONS, "counterstrikesharp/configs/plugins/CS2-SimpleAdmin/CS2-SimpleAdmin.json");
@@ -230,7 +228,7 @@ for root, dirs, files in os.walk(src):
         
         const adminPath = path.join(PATHS.ADDONS, "counterstrikesharp/configs/admins.json");
         this.writeConfig(adminPath, adminJson);
-        console.log(`[NODE] 👑 ${adminIds.length} admins configured.`);
+        console.log(`[NODE] 👑 ${adminIds.length} Admins configured.`);
     }
 
     copyServerConfig() {
@@ -250,6 +248,14 @@ for root, dirs, files in os.walk(src):
     startServer() {
         console.log("[NODE] 🚀 Starting CS2...");
         
+        const serverBin = path.join(PATHS.SRCDS, "game/bin/linuxsteamrt64");
+        const csgoBin = path.join(PATHS.SRCDS, "game/csgo/bin/linuxsteamrt64");
+        const steamCmdBin = path.join(PATHS.STEAMCMD, "linux64");
+        
+        const ldLibraryPath = `${serverBin}:${csgoBin}:${steamCmdBin}:${process.env.LD_LIBRARY_PATH || ''}`;
+        
+        const env = { ...process.env, LD_LIBRARY_PATH: ldLibraryPath };
+
         const serverArgs = [
             '-game', 'csgo',
             '-dedicated',
@@ -260,13 +266,17 @@ for root, dirs, files in os.walk(src):
             '+sv_setsteamaccount', ENV.GSLT,
             '+rcon_password', ENV.RCON_PASS,
             '+hostname', ENV.HOSTNAME,
-            '+map', ENV.MAP
+            '+map', ENV.INITIAL_MAP
         ];
 
         const logStream = fs.openSync(PATHS.LOG, 'w');
-        const server = spawn('gosu', ['steam', `${PATHS.GAME_ROOT}/bin/linuxsteamrt64/cs2`, ...serverArgs], {
+        
+        const executable = path.join(PATHS.SRCDS, "game/bin/linuxsteamrt64/cs2");
+
+        const server = spawn('gosu', ['steam', executable, ...serverArgs], {
             detached: false,
-            stdio: ['ignore', logStream, logStream]
+            stdio: ['ignore', logStream, logStream],
+            env: env
         });
 
         console.log(`[NODE] Server running with PID: ${server.pid}`);
