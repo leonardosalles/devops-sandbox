@@ -16,9 +16,10 @@ const PATHS = {
 
 PATHS.PLUGINS = path.join(PATHS.ADDONS, "counterstrikesharp/plugins");
 PATHS.GAME_ROOT = path.join(PATHS.SRCDS, "game/csgo");
+PATHS.GAME_BIN = path.join(PATHS.SRCDS, "game/bin/linuxsteamrt64");
 
 const DOWNLOAD_URLS = {
-    METAMOD: "https://mms.alliedmods.net/mmsdrop/2.0/mmsource-2.0.0-git1282-linux.tar.gz",
+    METAMOD: "https://mms.alliedmods.net/mmsdrop/2.0/mmsource-2.0.0-git1379-linux.tar.gz",
     MAM: "https://github.com/Source2ZE/MultiAddonManager/releases/download/v1.4.8/MultiAddonManager-v1.4.8-linux.tar.gz",
     CSS: "https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v1.0.347/counterstrikesharp-with-runtime-linux-1.0.347.zip",
     QUAKE_SOUNDS: "https://github.com/Kandru/cs2-quake-sounds/releases/download/25.11.2/cs2-quake-sounds-release-25.11.2.zip",
@@ -73,7 +74,6 @@ class ServerManager {
             
             const html = await response.text();
             const regex = new RegExp(regexPattern, 'g');
-            
             const matches = [...html.matchAll(regex)].map(m => m[0]);
             
             if (!matches || matches.length === 0) return null;
@@ -87,7 +87,8 @@ class ServerManager {
             });
             
             const latestFile = matches[matches.length - 1];
-            console.log(`[NODE] 🔄 Latest version found: ${latestFile}`);
+            console.log(`[NODE] 📊 Found versions range: ${matches[0]} ... ${latestFile}`);
+            console.log(`[NODE] 🔄 Selected Latest: ${latestFile}`);
             return `${baseUrl}${latestFile}`;
             
         } catch (e) {
@@ -168,8 +169,10 @@ for root, dirs, files in os.walk(src):
                     clean_fp = fp.replace('\\\\', '/')
                     if clean_fp.startswith("csgo/"): clean_fp = clean_fp[5:]
                     elif clean_fp.startswith("/csgo/"): clean_fp = clean_fp[6:]
+                    
                     out = os.path.join(dest, clean_fp)
                     os.makedirs(os.path.dirname(out), exist_ok=True)
+                    
                     pak.get_file(fp).save(out)
                 print("Extraction success.")
             except Exception as e:
@@ -177,6 +180,13 @@ for root, dirs, files in os.walk(src):
 `;
                 fs.writeFileSync('/tmp/extract.py', pythonScript);
                 execSync('python3 /tmp/extract.py', { stdio: 'inherit' });
+                
+                if (fs.existsSync(path.join(PATHS.GAME_ROOT, "soundevents/soundevents_quakesounds.vsndevts_c"))) {
+                    console.log("[BOOT] ✅ Soundevents file verified on disk!");
+                } else {
+                    console.log("[BOOT] ⚠️ WARNING: Soundevents file NOT found after extraction.");
+                }
+
             } else {
                 console.log("[BOOT] ❌ Workshop assets not found.");
             }
@@ -187,17 +197,20 @@ for root, dirs, files in os.walk(src):
 
     async setupMetamod() {
         console.log("[NODE] Checking Metamod...");
-        
         let mmUrl = await this.getLatestUrl(MM_BASE_URL, 'mmsource-2\\.0\\.[0-9]+-git[0-9]+-linux\\.tar\\.gz');
         
         if (!mmUrl) {
-             console.log("[NODE] ⚠️ Could not fetch latest Metamod. Using fallback URL.");
+             console.log("[NODE] ⚠️ Scraper failed. Using Fallback URL.");
              mmUrl = DOWNLOAD_URLS.METAMOD;
         }
 
-        await this.downloadFile(mmUrl, "/tmp/mm.tar.gz");
-        execSync(`tar -xzf /tmp/mm.tar.gz -C ${PATHS.GAME_ROOT}`);
-        console.log("[NODE] Metamod installed/updated.");
+        try {
+            await this.downloadFile(mmUrl, "/tmp/mm.tar.gz");
+            execSync(`tar -xzf /tmp/mm.tar.gz -C ${PATHS.GAME_ROOT}`);
+            console.log(`[NODE] Metamod installed from ${path.basename(mmUrl)}`);
+        } catch (e) {
+            console.error("[NODE] ❌ Metamod install failed:", e.message);
+        }
 
         if (fs.existsSync(PATHS.GAMEINFO)) {
             let content = fs.readFileSync(PATHS.GAMEINFO, 'utf8');
@@ -217,9 +230,10 @@ for root, dirs, files in os.walk(src):
             path.join(PATHS.ADDONS, "multiaddonmanager/config.json"), 
             { "WorkshopItems": [WORKSHOP_ID_QUAKE] }
         );
-
-        const cfgContent = `mm_extra_addons "${WORKSHOP_ID_QUAKE}"\nmm_client_extra_addons "${WORKSHOP_ID_QUAKE}"\nmm_extra_addons_timeout 10\nmm_addon_mount_download 1`;
-        this.writeConfig(path.join(PATHS.GAME_ROOT, "cfg/multiaddonmanager/multiaddonmanager.cfg"), cfgContent);
+        const cfgDir = path.join(PATHS.GAME_ROOT, "cfg/multiaddonmanager");
+        fs.mkdirSync(cfgDir, { recursive: true });
+        fs.writeFileSync(path.join(cfgDir, "multiaddonmanager.cfg"), 
+            `mm_extra_addons "${WORKSHOP_ID_QUAKE}"\nmm_client_extra_addons "${WORKSHOP_ID_QUAKE}"`);
     }
 
     async setupCounterStrikeSharp() {
@@ -228,9 +242,7 @@ for root, dirs, files in os.walk(src):
 
     async setupQuakeSounds() {
         await this.installPlugin("QuakeSounds", DOWNLOAD_URLS.QUAKE_SOUNDS, PATHS.PLUGINS);
-        
         localQuakeConfig.global.ignore_bots = false;
-        
         const configPath = path.join(PATHS.ADDONS, "counterstrikesharp/configs/plugins/CS2-QuakeSounds/QuakeSounds.json");
         this.writeConfig(configPath, localQuakeConfig);
     }
@@ -245,7 +257,6 @@ for root, dirs, files in os.walk(src):
         await this.installPlugin("SimpleAdmin", deps.SIMPLE_ADMIN, PATHS.GAME_ROOT);
 
         const configPath = path.join(PATHS.ADDONS, "counterstrikesharp/configs/plugins/CS2-SimpleAdmin/CS2-SimpleAdmin.json");
-        
         if (!localSimpleAdminConfig.Database) {
             localSimpleAdminConfig.Database = { "Driver": "SQLite", "Database": "cs2_simpleadmin", "Prefix": "sa_" };
         }
@@ -254,7 +265,6 @@ for root, dirs, files in os.walk(src):
 
     configureAdmins() {
         if (!ENV.ADMIN_IDS) return;
-        
         const adminIds = ENV.ADMIN_IDS.split(',').map(id => id.trim()).filter(id => id);
         const adminJson = {};
         adminIds.forEach(id => {
@@ -263,7 +273,6 @@ for root, dirs, files in os.walk(src):
                 "flags": ["@css/root", "@css/generic", "@css/cvar", "@css/rcon"]
             };
         });
-        
         const adminPath = path.join(PATHS.ADDONS, "counterstrikesharp/configs/admins.json");
         this.writeConfig(adminPath, adminJson);
         console.log(`[NODE] 👑 ${adminIds.length} Admins configured.`);
@@ -281,16 +290,41 @@ for root, dirs, files in os.walk(src):
         console.log("[NODE] 🔧 Adjusting permissions...");
         execSync(`chown -R steam:steam ${PATHS.SRCDS}`);
         execSync(`touch ${PATHS.LOG} && chown steam:steam ${PATHS.LOG}`);
+
+        console.log("[NODE] 🔧 Linking Steam Libraries...");
+        try {
+            const sdk64Dir = "/home/steam/.steam/sdk64";
+            execSync(`mkdir -p ${sdk64Dir}`);
+            
+            const steamClientSrc = path.join(PATHS.STEAMCMD, "linux64/steamclient.so");
+            const steamClientDest = path.join(sdk64Dir, "steamclient.so");
+            
+            if (fs.existsSync(steamClientSrc)) {
+                if (fs.existsSync(steamClientDest)) fs.unlinkSync(steamClientDest);
+                fs.symlinkSync(steamClientSrc, steamClientDest);
+                console.log("[NODE] ✅ steamclient.so linked successfully.");
+            } else {
+                console.log(`[NODE] ⚠️ steamclient.so not found at source: ${steamClientSrc}`);
+            }
+            
+            fs.writeFileSync(path.join(PATHS.GAME_ROOT, "bin/linuxsteamrt64/steam_appid.txt"), "730");
+            fs.writeFileSync(path.join(PATHS.SRCDS, "steam_appid.txt"), "730");
+            
+            execSync(`chown -R steam:steam /home/steam/.steam`);
+        } catch (e) {
+            console.error("[NODE] ⚠️ Steam Lib fix error:", e.message);
+        }
     }
 
     startServer() {
         console.log("[NODE] 🚀 Starting CS2...");
         
-        const serverBin = path.join(PATHS.SRCDS, "game/bin/linuxsteamrt64");
+        const serverBin = PATHS.GAME_BIN;
         const csgoBin = path.join(PATHS.SRCDS, "game/csgo/bin/linuxsteamrt64");
         const steamCmdBin = path.join(PATHS.STEAMCMD, "linux64");
+        const sdk64 = "/home/steam/.steam/sdk64";
         
-        const ldLibraryPath = `${serverBin}:${csgoBin}:${steamCmdBin}:${process.env.LD_LIBRARY_PATH || ''}`;
+        const ldLibraryPath = `${serverBin}:${csgoBin}:${steamCmdBin}:${sdk64}:${process.env.LD_LIBRARY_PATH || ''}`;
         
         const env = { ...process.env, LD_LIBRARY_PATH: ldLibraryPath };
 
@@ -308,8 +342,7 @@ for root, dirs, files in os.walk(src):
         ];
 
         const logStream = fs.openSync(PATHS.LOG, 'w');
-        
-        const executable = path.join(PATHS.SRCDS, "game/bin/linuxsteamrt64/cs2");
+        const executable = path.join(serverBin, "cs2");
 
         const server = spawn('gosu', ['steam', executable, ...serverArgs], {
             detached: false,
