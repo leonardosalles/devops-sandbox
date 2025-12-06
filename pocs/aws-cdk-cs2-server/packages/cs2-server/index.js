@@ -68,8 +68,12 @@ class ServerManager {
         try {
             const response = await fetch(url);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            
             const fileStream = fs.createWriteStream(destPath);
-            await finished(Readable.fromWeb(response.body).pipe(fileStream));
+            const nodeStream = Readable.fromWeb(response.body);
+            const stream = nodeStream.pipe(fileStream);
+            
+            await finished(stream);
         } catch (error) {
             console.error(`❌ Error downloading ${url}:`, error.message);
             throw error;
@@ -253,7 +257,6 @@ for root, dirs, files in os.walk(src):
         const steamCmdBin = path.join(PATHS.STEAMCMD, "linux64");
         
         const ldLibraryPath = `${serverBin}:${csgoBin}:${steamCmdBin}:${process.env.LD_LIBRARY_PATH || ''}`;
-        
         const env = { ...process.env, LD_LIBRARY_PATH: ldLibraryPath };
 
         const serverArgs = [
@@ -270,7 +273,6 @@ for root, dirs, files in os.walk(src):
         ];
 
         const logStream = fs.openSync(PATHS.LOG, 'w');
-        
         const executable = path.join(PATHS.SRCDS, "game/bin/linuxsteamrt64/cs2");
 
         const server = spawn('gosu', ['steam', executable, ...serverArgs], {
