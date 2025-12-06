@@ -31,6 +31,7 @@ const DOWNLOAD_URLS = {
     }
 };
 
+const MM_BASE_URL = "https://mms.alliedmods.net/mmsdrop/2.0/";
 const WORKSHOP_ID_QUAKE = "3461824328";
 
 const localQuakeConfig = require('./addons_configs/QuakeSounds.json');
@@ -62,6 +63,37 @@ class ServerManager {
         console.log(`API_URL: ${ENV.API_URL || 'NOT SET'}`);
         console.log(`GSLT: ${ENV.GSLT ? '****** (SET)' : 'NOT SET'}`);
         console.log("-----------------------------------");
+    }
+
+    async getLatestUrl(baseUrl, regexPattern) {
+        try {
+            console.log(`[NODE] 🔍 Scraping latest version from ${baseUrl}...`);
+            const response = await fetch(baseUrl);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            const html = await response.text();
+            const regex = new RegExp(regexPattern, 'g');
+            
+            const matches = [...html.matchAll(regex)].map(m => m[0]);
+            
+            if (!matches || matches.length === 0) return null;
+            
+            matches.sort((a, b) => {
+                const getBuild = (s) => {
+                    const m = s.match(/-git(\d+)-/);
+                    return m ? parseInt(m[1]) : 0;
+                };
+                return getBuild(a) - getBuild(b);
+            });
+            
+            const latestFile = matches[matches.length - 1];
+            console.log(`[NODE] 🔄 Latest version found: ${latestFile}`);
+            return `${baseUrl}${latestFile}`;
+            
+        } catch (e) {
+            console.error(`[NODE] ⚠️ Failed to scrape latest version: ${e.message}`);
+            return null;
+        }
     }
 
     async downloadFile(url, destPath) {
@@ -158,11 +190,17 @@ for root, dirs, files in os.walk(src):
     }
 
     async setupMetamod() {
-        console.log("[NODE] Updating/Installing Metamod...");
-        // REMOVIDO check if exists para forçar update e corrigir versão antiga
-        await this.downloadFile(DOWNLOAD_URLS.METAMOD, "/tmp/mm.tar.gz");
+        console.log("[NODE] Checking Metamod...");
+        
+        let mmUrl = await this.getLatestUrl(MM_BASE_URL, 'mmsource-2\\.0\\.[0-9]+-git[0-9]+-linux\\.tar\\.gz');
+        if (!mmUrl) {
+             console.log("[NODE] ⚠️ Could not fetch latest Metamod. Using fallback URL.");
+             mmUrl = DOWNLOAD_URLS.METAMOD;
+        }
+
+        await this.downloadFile(mmUrl, "/tmp/mm.tar.gz");
         execSync(`tar -xzf /tmp/mm.tar.gz -C ${PATHS.GAME_ROOT}`);
-        console.log("[NODE] Metamod installed.");
+        console.log("[NODE] Metamod installed/updated.");
 
         if (fs.existsSync(PATHS.GAMEINFO)) {
             let content = fs.readFileSync(PATHS.GAMEINFO, 'utf8');
@@ -279,7 +317,7 @@ for root, dirs, files in os.walk(src):
             env: env
         });
 
-        console.log(`[NODE] Server running with PID: ${server.pid}`);
+        console.log(`[NODE] Servidor rodando com PID: ${server.pid}`);
 
         const tail = spawn('tail', ['-f', PATHS.LOG]);
         tail.stdout.on('data', (data) => {
