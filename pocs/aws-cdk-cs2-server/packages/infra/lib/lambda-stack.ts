@@ -105,10 +105,16 @@ export class LambdaStack extends Stack {
 
     props.table.grantReadWriteData(this.controlFn);
 
-    new ssm.StringParameter(this, "AdminIdsParam", {
+    const adminIdsParam = new ssm.StringParameter(this, "AdminIdsParam", {
       parameterName: "/cs2/admin-ids",
       stringValue: props.steamAdminIds,
     });
+
+    adminIdsParam.grantRead(props.ec2Role);
+
+    props.ec2Role.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonSSMManagedInstanceCore")
+    );
 
     new cdk.CfnOutput(this, "Environment", {
       value: JSON.stringify(environment),
