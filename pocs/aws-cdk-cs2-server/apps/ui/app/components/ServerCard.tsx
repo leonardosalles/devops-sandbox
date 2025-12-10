@@ -125,7 +125,7 @@ export default function ServerCard({
             onClick={() => onAction(s.id, "rcon")}
             className="bg-purple-600 hover:bg-purple-700"
           >
-            Rcon
+            Configure
           </LoadingButton>
         )}
       </div>

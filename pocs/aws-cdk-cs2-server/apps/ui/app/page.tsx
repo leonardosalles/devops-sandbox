@@ -190,7 +190,7 @@ export default function Page() {
       {isRconModalOpen && (
         <Modal onClose={handleModalClose}>
           <div className="p-4">
-            <h2 className="text-lg font-bold">Rcon</h2>
+            <h2 className="text-lg font-bold">Configure</h2>
             <div className="flex flex-col gap-6 mt-4">
               <div>
                 <h3 className="text-md font-semibold mb-2">Common Commands</h3>
