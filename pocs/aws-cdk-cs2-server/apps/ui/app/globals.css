@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Noise background */
 body {
   background: radial-gradient(ellipse at center, rgba(15,23,34,0.65), rgba(6,8,10,1));
   background-color: #0b0f14;
@@ -12,7 +11,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* subtle animated scanline */
 .bg-scanlines::after {
   content: "";
   position: fixed;
@@ -29,7 +27,6 @@ body {
   100% { transform: translateY(102%); }
 }
 
-/* subtle noise */
 .noise {
   position: fixed;
   inset: 0;
@@ -39,17 +36,18 @@ body {
   mix-blend-mode: overlay;
 }
 
-/* glass card */
 .glass {
   background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
   border: 1px solid rgba(255,255,255,0.04);
   backdrop-filter: blur(6px) saturate(120%);
 }
 
-/* HUD left */
 .hud {
   width: 260px;
 }
 
-/* small util */
 .kv { color: #9fb3c8; font-size: 12px; }
+
+.Toastify__toast-theme--dark {
+  background: #022f66af !important;
+}

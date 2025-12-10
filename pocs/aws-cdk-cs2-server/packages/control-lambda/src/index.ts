@@ -25,6 +25,7 @@ const REPO_URI = process.env.REPO_URI!;
 const AWS_REGION = process.env.REGION || process.env.AWS_REGION || "sa-east-1";
 const RCON_PASSWORD = process.env.RCON_PASSWORD || "";
 const GSLT = process.env.GSLT || "";
+const INITIAL_MAP = process.env.INITIAL_MAP || "";
 
 const KEY_NAME = "cs2-key";
 const SECURITY_GROUP_ID = process.env.SECURITY_GROUP_ID!;
@@ -169,6 +170,7 @@ SERVER_ID="${id}"
 
 RCON_PASSWORD="${RCON_PASSWORD}"
 GSLT="${GSLT}"
+INITIAL_MAP="${INITIAL_MAP}"
 AWS_REGION="${AWS_REGION}"
 REPO_URI="${REPO_URI}"
 REGISTRY_URI="${registryUri}"
@@ -255,6 +257,7 @@ echo "RCON_PASSWORD=\${RCON_PASSWORD}" >> /envfile
 echo "GSLT=\${GSLT}" >> /envfile
 
 echo "API_URL=\${API_URL}" >> /envfile
+echo "INITIAL_MAP=\${INITIAL_MAP}" >> /envfile
 echo "STEAM_ADMIN_IDS=\${STEAM_ADMIN_IDS}" >> /envfile
 echo "SERVER_ID=\${SERVER_ID}" >> /envfile
 

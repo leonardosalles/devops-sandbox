@@ -3,6 +3,7 @@
 import { motion, type MotionProps } from "framer-motion";
 import type { HTMLAttributes } from "react";
 import LoadingButton from "./LoadingButton";
+import { toast } from "react-toastify";
 
 type MotionDivProps = HTMLAttributes<HTMLDivElement> & MotionProps;
 
@@ -65,9 +66,10 @@ export default function ServerCard({
 
             <LoadingButton
               loading={loading}
-              onClick={() =>
-                navigator.clipboard.writeText(`${s.publicIp}:27015`)
-              }
+              onClick={() => {
+                navigator.clipboard.writeText(`connect ${s.publicIp}:27015`);
+                toast.success("Copied to clipboard!");
+              }}
               className="text-xs text-blue-400 hover:underline px-2 py-1"
             >
               Copy
@@ -79,13 +81,15 @@ export default function ServerCard({
       </div>
 
       <div className="mt-4 flex gap-3 flex-wrap">
-        <LoadingButton
-          loading={loading}
-          onClick={() => onAction(s.id, "start")}
-          className="bg-green-600 hover:bg-green-700"
-        >
-          Start
-        </LoadingButton>
+        {instanceId && s.state !== "RUNNING" && (
+          <LoadingButton
+            loading={loading}
+            onClick={() => onAction(s.id, "start")}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            Start
+          </LoadingButton>
+        )}
 
         {instanceId && (
           <>

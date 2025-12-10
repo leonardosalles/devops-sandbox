@@ -32,6 +32,7 @@ export class AppStack extends cdk.Stack {
       securityGroup: networkStack.sg,
       rconPassword: process.env.RCON_PASSWORD!,
       gslt: process.env.GSLT!,
+      initialMap: process.env.INITIAL_MAP!,
       imageAmiId: process.env.IMAGE_AMI_ID!,
       ec2InstanceType: process.env.EC2_INSTANCE_TYPE!,
       steamAdminIds: process.env.STEAM_ADMIN_IDS!,
