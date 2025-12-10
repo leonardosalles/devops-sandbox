@@ -81,7 +81,7 @@ export default function ServerCard({
       </div>
 
       <div className="mt-4 flex gap-3 flex-wrap">
-        {instanceId && s.state !== "RUNNING" && (
+        {instanceId && s.state === "CREATED" && (
           <LoadingButton
             loading={loading}
             onClick={() => onAction(s.id, "start")}
