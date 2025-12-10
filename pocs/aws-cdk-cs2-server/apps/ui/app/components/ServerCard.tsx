@@ -80,44 +80,46 @@ export default function ServerCard({
         )}
       </div>
 
-      <div className="mt-4 flex gap-3 flex-wrap">
-        {!instanceId && s.state === "CREATED" && (
+      <div className="mt-4 flex justify-between items-center">
+        <div className="flex gap-3 flex-wrap">
+          {!instanceId && s.state === "CREATED" && (
+            <LoadingButton
+              loading={loading}
+              onClick={() => onAction(s.id, "start")}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Start
+            </LoadingButton>
+          )}
+
+          {instanceId && (
+            <>
+              <LoadingButton
+                loading={loading}
+                onClick={() => onAction(s.id, "stop")}
+                className="bg-yellow-600 hover:bg-yellow-700"
+              >
+                Stop
+              </LoadingButton>
+
+              <LoadingButton
+                loading={loading}
+                onClick={() => onAction(s.id, "restart")}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Restart
+              </LoadingButton>
+            </>
+          )}
+
           <LoadingButton
             loading={loading}
-            onClick={() => onAction(s.id, "start")}
-            className="bg-green-600 hover:bg-green-700"
+            onClick={() => onAction(s.id, "terminate")}
+            className="bg-red-600 hover:bg-red-700"
           >
-            Start
+            {instanceId ? "Terminate" : "Delete"}
           </LoadingButton>
-        )}
-
-        {instanceId && (
-          <>
-            <LoadingButton
-              loading={loading}
-              onClick={() => onAction(s.id, "stop")}
-              className="bg-yellow-600 hover:bg-yellow-700"
-            >
-              Stop
-            </LoadingButton>
-
-            <LoadingButton
-              loading={loading}
-              onClick={() => onAction(s.id, "restart")}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Restart
-            </LoadingButton>
-          </>
-        )}
-
-        <LoadingButton
-          loading={loading}
-          onClick={() => onAction(s.id, "terminate")}
-          className="bg-red-600 hover:bg-red-700"
-        >
-          {instanceId ? "Terminate" : "Delete"}
-        </LoadingButton>
+        </div>
 
         {instanceId && s.state === "RUNNING" && (
           <LoadingButton
