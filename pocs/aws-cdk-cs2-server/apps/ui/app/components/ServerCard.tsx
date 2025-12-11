@@ -70,7 +70,7 @@ export default function ServerCard({
                 navigator.clipboard.writeText(`connect ${s.publicIp}:27015`);
                 toast.success("Copied to clipboard!");
               }}
-              className="text-xs text-blue-400 hover:underline px-2 py-1"
+              className="text-xs text-orange-400 hover:underline px-2 py-1"
             >
               Copy
             </LoadingButton>
