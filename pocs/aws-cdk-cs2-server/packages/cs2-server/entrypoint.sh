@@ -315,7 +315,7 @@ gosu steam "${CS2_BIN}" \
   +sv_setsteamaccount "${GSLT}" \
   +rcon_password "${RCON_PASSWORD}" \
   +hostname "${SERVER_HOSTNAME:-Watercooler Server}" \
-  +map "${MAP:-de_inferno}" \
+  +map "${INITIAL_MAP:-de_inferno}" \
   2>&1 | tee "${LOG_FILE}" &
 
 CS2_PID=$!
