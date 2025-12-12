@@ -30,80 +30,51 @@ gosu steam ${STEAMCMD_DIR}/steamcmd.sh \
     +workshop_download_item 730 3461824328 \
     +quit > /dev/null
 
-echo "[BOOT] 📂 Locating VPKs..."
-WORKSHOP_FOUND=$(find /home/steam -type d -name "3461824328" -print -quit)
+DEFAULT_STEAMAPPS="/home/steam/Steam/steamapps"
+SERVER_STEAMAPPS="${SRCDS_DIR}/steamapps"
+TARGET_WORKSHOP_DIR="${SERVER_STEAMAPPS}/workshop/content/730/3461824328"
 
-if [ -n "$WORKSHOP_FOUND" ]; then
-    echo "[BOOT] 🎯 Found assets at: $WORKSHOP_FOUND"
+if [ -d "${DEFAULT_STEAMAPPS}/workshop/content/730/3461824328" ]; then
+    echo "[BOOT] 🚚 Moving SteamApps to Server Directory..."
+    rm -rf "${SERVER_STEAMAPPS}"
+    mv "${DEFAULT_STEAMAPPS}" "${SRCDS_DIR}/"
+    echo "[BOOT] 🎯 Assets installed at: $TARGET_WORKSHOP_DIR"
     
-    cat <<'EOF' > /tmp/extract_vpk.py
-import vpk
-import os
-import sys
-
-src_dir = os.environ.get('WORKSHOP_FOUND')
-dest_dir = os.environ.get('DEST_DIR')
-
-if not src_dir or not dest_dir:
-    print("[PYTHON] Environment variables missing!")
-    sys.exit(1)
-
-print(f"[PYTHON] Scanning {src_dir} for VPKs...")
-
-found = False
-for root, dirs, files in os.walk(src_dir):
-    for file in files:
-        if file.endswith("_dir.vpk"):
-            found = True
-            vpk_path = os.path.join(root, file)
-            print(f"[PYTHON] Found VPK: {vpk_path}")
-            print(f"[PYTHON] Extracting to: {dest_dir}")
-            
-            try:
-                pak = vpk.open(vpk_path)
-                for filepath in pak:
-                    filepath_clean = filepath.replace('\\', '/')
-                    if filepath_clean.startswith("csgo/"):
-                        filepath_clean = filepath_clean[5:]
-                    elif filepath_clean.startswith("/csgo/"):
-                        filepath_clean = filepath_clean[6:]
-
-                    out_path = os.path.join(dest_dir, filepath_clean)
-                    os.makedirs(os.path.dirname(out_path), exist_ok=True)
-                    pak.get_file(filepath).save(out_path)
-                    
-                print(f"[PYTHON] ✅ Successfully extracted {vpk_path}")
-            except Exception as e:
-                print(f"[PYTHON] ❌ Error processing {file}: {e}")
-
-if not found:
-    print("[PYTHON] ⚠️ No _dir.vpk found to extract!")
+    echo "[BOOT] 📝 Generating libraryfolders.vdf..."
+    cat <<EOF > "${SERVER_STEAMAPPS}/libraryfolders.vdf"
+"libraryfolders"
+{
+    "0"
+    {
+        "path"      "${SRCDS_DIR}"
+        "label"     ""
+        "contentid" "0"
+        "totalsize" "0"
+        "apps"
+        {
+            "730" "0"
+        }
+    }
+}
 EOF
-
-    echo "[BOOT] 🔨 Running VPK Extractor..."
-    export WORKSHOP_FOUND
-    export DEST_DIR="${SRCDS_DIR}/game/csgo"
-    python3 /tmp/extract_vpk.py
-    
-    if [ -f "${SRCDS_DIR}/game/csgo/soundevents/soundevents_quakesounds.vsndevts_c" ]; then
-        echo "[BOOT] ✅ SUCCESS: SoundEvents file extracted correctly!"
-    else
-        echo "[BOOT] ⚠️ WARNING: Extraction finished but vsndevts file is missing."
-    fi
 else
-    echo "[BOOT] ❌ CRITICAL: Workshop folder not found!"
+    echo "[BOOT] ❌ CRITICAL: Workshop download failed in default path!"
 fi
 
+echo "[ADDONS] 🔎 Fetching latest Metamod:Source version..."
 MM_BASE_URL="https://mms.alliedmods.net/mmsdrop/2.0/"
-MM_LATEST_FILE=$(curl -s "$MM_BASE_URL" | grep -o 'mmsource-2.0.[0-9]*-git[0-9]*-linux.tar.gz' | sort -V | tail -1)
+MM_LATEST_FILE=$(curl -s "$MM_BASE_URL" | grep -o 'mmsource-2.0.0-git[0-9]*-\linux.tar.gz' | sort -V | tail -n1)
+
 if [ -z "$MM_LATEST_FILE" ]; then
-    MM_URL="https://mms.alliedmods.net/mmsdrop/2.0/mmsource-2.0.0-git1319-linux.tar.gz"
+  echo "[ADDONS] ❌ Failed to find Metamod version! Using fallback..."
+  MM_URL="https://mms.alliedmods.net/mmsdrop/2.0/mmsource-2.0.0-git1374-linux.tar.gz"
 else
-    MM_URL="${MM_BASE_URL}${MM_LATEST_FILE}"
+  MM_URL="${MM_BASE_URL}${MM_LATEST_FILE}"
+  echo "[ADDONS] ✅ Found latest Metamod: $MM_LATEST_FILE"
 fi
-install_if_not_exists "Metamod" \
-  "$ADDONS_DIR/metamod/bin/linuxsteamrt64/gamedll.so" \
-  "curl -L \"${MM_URL}\" | tar -xz -C ${SRCDS_DIR}/game/csgo"
+
+echo "[ADDONS] 🔄 Installing Metamod..."
+curl -L "${MM_URL}" | tar -xz -C ${SRCDS_DIR}/game/csgo
 
 if [ -f "$GAMEINFO_FILE" ]; then
     sed -i '/quakesounds_assets/d' "$GAMEINFO_FILE"
@@ -113,33 +84,15 @@ if [ -f "$GAMEINFO_FILE" ]; then
     fi
 fi
 
-install_if_not_exists "MultiAddonManager" \
-  "$ADDONS_DIR/multiaddonmanager/bin/linuxsteamrt64/multiaddonmanager.so" \
-  "curl -L https://github.com/Source2ZE/MultiAddonManager/releases/download/v1.4.8/MultiAddonManager-v1.4.8-linux.tar.gz \
-    | tar -xz -C ${SRCDS_DIR}/game/csgo"
+echo "[ADDONS] 🧹 Cleaning up MultiAddonManager to isolate crash..."
+rm -rf "${SRCDS_DIR}/game/csgo/addons/multiaddonmanager"
+rm -f "${SRCDS_DIR}/game/csgo/addons/metamod/multiaddonmanager.vdf"
 
-MAM_JSON="${ADDONS_DIR}/multiaddonmanager/config.json"
-mkdir -p "$(dirname "$MAM_JSON")"
-echo "[ADDONS] Configuring MAM (JSON)..."
-cat <<'EOF' > "$MAM_JSON"
-{
-  "WorkshopItems": [
-    "3461824328"
-  ]
-}
-EOF
+# MAM DANDO ERRO NO SERVER
+# curl -L "https://github.com/Source2ZE/MultiAddonManager/releases/download/v1.4.8/MultiAddonManager-v1.4.8-linux.tar.gz" \
+#     | tar -xz -C "${SRCDS_DIR}/game/csgo"
 
-MAM_CFG_DIR="${SRCDS_DIR}/game/csgo/cfg/multiaddonmanager"
-mkdir -p "$MAM_CFG_DIR"
-MAM_CFG="${MAM_CFG_DIR}/multiaddonmanager.cfg"
-echo "[ADDONS] Configuring MAM (CFG)..."
-cat <<'EOF' > "$MAM_CFG"
-mm_extra_addons "3461824328"
-mm_client_extra_addons "3461824328"
-mm_extra_addons_timeout 10
-mm_addon_mount_download 1
-EOF
-
+echo "[ADDONS] 🔄 Installing CounterStrikeSharp..."
 CSS_URL="https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v1.0.347/counterstrikesharp-with-runtime-linux-1.0.347.zip"
 install_if_not_exists "CounterStrikeSharp" \
   "$ADDONS_DIR/counterstrikesharp/bin/linuxsteamrt64/counterstrikesharp.so" \
@@ -150,10 +103,10 @@ install_if_not_exists "QuakeSounds" \
   "$QS_PLUGIN_PATH" \
   "curl -L https://github.com/Kandru/cs2-quake-sounds/releases/download/25.11.2/cs2-quake-sounds-release-25.11.2.zip -o quake.zip && unzip -q -o quake.zip -d ${CSS_PLUGINS_DIR} && rm quake.zip"
 
-echo "[ADDONS] 📄 Generating QuakeSounds configuration (Hardcoded Force)..."
-
-write_qs_config() {
-cat <<'EOF' > "$1"
+echo "[ADDONS] 📄 Generating QuakeSounds configuration..."
+QS_CFG="${ADDONS_DIR}/counterstrikesharp/configs/plugins/CS2-QuakeSounds/QuakeSounds.json"
+mkdir -p "$(dirname "$QS_CFG")"
+cat <<'EOF' > "$QS_CFG"
 {
   "enabled": true,
   "debug": false,
@@ -203,17 +156,6 @@ cat <<'EOF' > "$1"
   "ConfigVersion": 1
 }
 EOF
-}
-
-QS_CFG_1="${ADDONS_DIR}/counterstrikesharp/configs/plugins/CS2-QuakeSounds/QuakeSounds.json"
-mkdir -p "$(dirname "$QS_CFG_1")"
-write_qs_config "$QS_CFG_1"
-echo "[ADDONS] Config written to: $QS_CFG_1"
-
-QS_CFG_2="${ADDONS_DIR}/counterstrikesharp/configs/plugins/QuakeSounds/QuakeSounds.json"
-mkdir -p "$(dirname "$QS_CFG_2")"
-write_qs_config "$QS_CFG_2"
-echo "[ADDONS] Config written to: $QS_CFG_2"
 
 STATUS_BLOCKER_URL="https://github.com/daffyyyy/CS2-SimpleAdmin/releases/download/build-1.7.8-beta-7/StatusBlocker-linux-1.7.8-beta-7.zip"
 install_if_not_exists "StatusBlocker" \
@@ -242,10 +184,7 @@ install_if_not_exists "SimpleAdmin" \
 
 SIMPLE_ADMIN_CFG_DIR="${ADDONS_DIR}/counterstrikesharp/configs/plugins/CS2-SimpleAdmin"
 mkdir -p "$SIMPLE_ADMIN_CFG_DIR"
-SIMPLE_ADMIN_CFG="${SIMPLE_ADMIN_CFG_DIR}/CS2-SimpleAdmin.json"
-
-echo "[ADDONS] 📄 Generating SimpleAdmin configuration (DB + Menu)..."
-cat <<'EOF' > "$SIMPLE_ADMIN_CFG"
+cat <<'EOF' > "${SIMPLE_ADMIN_CFG_DIR}/CS2-SimpleAdmin.json"
 {
   "Database": {
     "Host": "localhost",
@@ -264,8 +203,6 @@ cat <<'EOF' > "$SIMPLE_ADMIN_CFG"
     "Comandos Rapidos": {
       "Kikar Todos os Bots": "bot_kick",
       "Reiniciar Partida (Live)": "mp_restartgame 1",
-      "Remover Freezetime": "mp_freezetime 0; say Freezetime Removido!",
-      "Ativar Freezetime (15s)": "mp_freezetime 15; say Freezetime Restaurado!",
       "Dinheiro Infinito": "mp_maxmoney 60000; mp_startmoney 60000; mp_afterroundmoney 60000; say Ta chovendo dinheiro!",
       "Travar Bots (Stop)": "bot_stop 1",
       "Destravar Bots (Move)": "bot_stop 0"
@@ -294,18 +231,34 @@ fi
 echo "[CS2] 🔧 Fixing permissions..."
 chown -R steam:steam "${SRCDS_DIR}"
 
-SERVER_BIN_PATH="${SRCDS_DIR}/game/bin/linuxsteamrt64"
+echo "[CS2] 🔧 Setting up Steam Environment to prevent SIGSEGV..."
+mkdir -p /home/steam/.steam/sdk64
+cp "${STEAMCMD_DIR}/linux64/steamclient.so" /home/steam/.steam/sdk64/steamclient.so || true
+cp "${STEAMCMD_DIR}/linux64/steamclient.so" "${SRCDS_DIR}/game/bin/linuxsteamrt64/steamclient.so" || true
+
+echo "730" > "${SRCDS_DIR}/game/bin/linuxsteamrt64/steam_appid.txt"
+echo "730" > "${SRCDS_DIR}/steam_appid.txt"
+
+mkdir -p "${SRCDS_DIR}/game/steam_staging"
+mkdir -p "${SRCDS_DIR}/steamapps/workshop"
+mkdir -p "${SRCDS_DIR}/steamapps/shadercache"
+
+chown -R steam:steam /home/steam/.steam "${SRCDS_DIR}/game/steam_staging" "${SRCDS_DIR}/steamapps" 2>/dev/null || true
+
+SERVER_BIN_DIR="${SRCDS_DIR}/game/bin/linuxsteamrt64"
 CSGO_BIN_PATH="${SRCDS_DIR}/game/csgo/bin/linuxsteamrt64"
 STEAMCMD_BIN_PATH="${STEAMCMD_DIR}/linux64"
-export LD_LIBRARY_PATH="${SERVER_BIN_PATH}:${CSGO_BIN_PATH}:${STEAMCMD_BIN_PATH}:${LD_LIBRARY_PATH:-}"
+export LD_LIBRARY_PATH="${SERVER_BIN_DIR}:${CSGO_BIN_PATH}:${STEAMCMD_BIN_PATH}:${LD_LIBRARY_PATH:-}"
 
-CS2_BIN="${SRCDS_DIR}/game/bin/linuxsteamrt64/cs2"
 LOG_FILE="/tmp/cs2.log"
 touch "${LOG_FILE}"
 chown steam:steam "${LOG_FILE}"
 
 echo "[CS2] 🚀 Starting server..."
-gosu steam "${CS2_BIN}" \
+
+cd "${SERVER_BIN_DIR}"
+
+gosu steam ./cs2 \
   -game csgo \
   -dedicated \
   -insecure \
@@ -315,7 +268,7 @@ gosu steam "${CS2_BIN}" \
   +sv_setsteamaccount "${GSLT}" \
   +rcon_password "${RCON_PASSWORD}" \
   +hostname "${SERVER_HOSTNAME:-Watercooler Server}" \
-  +map "${INITIAL_MAP:-de_inferno}" \
+  +map "${MAP:-de_inferno}" \
   2>&1 | tee "${LOG_FILE}" &
 
 CS2_PID=$!
