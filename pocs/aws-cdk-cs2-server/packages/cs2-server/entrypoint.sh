@@ -84,16 +84,35 @@ if [ -f "$GAMEINFO_FILE" ]; then
     fi
 fi
 
-echo "[ADDONS] 🧹 Cleaning up MultiAddonManager to isolate crash..."
-rm -rf "${SRCDS_DIR}/game/csgo/addons/multiaddonmanager"
-rm -f "${SRCDS_DIR}/game/csgo/addons/metamod/multiaddonmanager.vdf"
+install_if_not_exists "MultiAddonManager" \
+  "$ADDONS_DIR/multiaddonmanager/bin/linuxsteamrt64/multiaddonmanager.so" \
+  "curl -L https://github.com/Source2ZE/MultiAddonManager/releases/download/v1.4.8/MultiAddonManager-v1.4.8-linux.tar.gz \
+    | tar -xz -C ${SRCDS_DIR}/game/csgo"
 
-# MAM DANDO ERRO NO SERVER
-# curl -L "https://github.com/Source2ZE/MultiAddonManager/releases/download/v1.4.8/MultiAddonManager-v1.4.8-linux.tar.gz" \
-#     | tar -xz -C "${SRCDS_DIR}/game/csgo"
+MAM_JSON="${ADDONS_DIR}/multiaddonmanager/config.json"
+mkdir -p "$(dirname "$MAM_JSON")"
+echo "[ADDONS] Configuring MAM (JSON)..."
+cat <<'EOF' > "$MAM_JSON"
+{
+  "WorkshopItems": [
+    "3461824328"
+  ]
+}
+EOF
+
+MAM_CFG_DIR="${SRCDS_DIR}/game/csgo/cfg/multiaddonmanager"
+mkdir -p "$MAM_CFG_DIR"
+MAM_CFG="${MAM_CFG_DIR}/multiaddonmanager.cfg"
+echo "[ADDONS] Configuring MAM (CFG)..."
+cat <<'EOF' > "$MAM_CFG"
+mm_extra_addons "3461824328"
+mm_client_extra_addons "3461824328"
+mm_extra_addons_timeout 10
+mm_addon_mount_download 1
+EOF
 
 echo "[ADDONS] 🔄 Installing CounterStrikeSharp..."
-CSS_URL="https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v1.0.347/counterstrikesharp-with-runtime-linux-1.0.347.zip"
+CSS_URL="https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v1.0.349/counterstrikesharp-with-runtime-linux-1.0.349.zip"
 install_if_not_exists "CounterStrikeSharp" \
   "$ADDONS_DIR/counterstrikesharp/bin/linuxsteamrt64/counterstrikesharp.so" \
   "curl -L \"${CSS_URL}\" -o css.zip && unzip -q -o css.zip -d ${SRCDS_DIR}/game/csgo && rm css.zip"
@@ -228,6 +247,50 @@ if [ -n "${STEAM_ADMIN_IDS:-}" ]; then
   echo "}" >> "$ADMINS_CFG"
 fi
 
+echo "[CS2] 📝 Generating server.cfg..."
+
+SERVER_CFG_DIR="${SRCDS_DIR}/game/csgo/cfg"
+SERVER_CFG_FILE="${SERVER_CFG_DIR}/server.cfg"
+
+mkdir -p "${SERVER_CFG_DIR}"
+
+cat <<'EOF' > "${SERVER_CFG_FILE}"
+hostname "Watercooler - Server"
+
+sv_password ""
+sv_cheats 1
+sv_autobunny 0
+sv_lan 0
+sv_region 255
+
+mp_maxrounds 30
+mp_roundtime 5
+mp_free_armor 0
+
+sv_allow_votes 1
+
+sv_minupdaterate 64
+sv_maxupdaterate 128
+sv_minrate 786432
+sv_maxrate 786432
+sv_maxcmdrate 128
+
+sv_force_preload 1
+
+mp_friendlyfire 1
+mp_autokick 0
+mp_tkpunish 0
+mp_spectators_max 32
+mp_forcecamera 0
+mp_limitteams 0
+mp_autoteambalance 0
+EOF
+
+chown steam:steam "${SERVER_CFG_FILE}"
+
+echo "[CS2] ✅ server.cfg created at ${SERVER_CFG_FILE}"
+
+
 echo "[CS2] 🔧 Fixing permissions..."
 chown -R steam:steam "${SRCDS_DIR}"
 
@@ -264,11 +327,11 @@ gosu steam ./cs2 \
   -insecure \
   -usercon \
   -console \
-  +sv_pure 0 \
+  +exec server.cfg \
   +sv_setsteamaccount "${GSLT}" \
   +rcon_password "${RCON_PASSWORD}" \
   +hostname "${SERVER_HOSTNAME:-Watercooler Server}" \
-  +map "${MAP:-de_inferno}" \
+  +map "${INITIAL_MAP:-de_inferno}" \
   2>&1 | tee "${LOG_FILE}" &
 
 CS2_PID=$!
