@@ -23,9 +23,6 @@ RUN pip3 install vpk --break-system-packages
 
 COPY cfg ${SRCDS_DIR}/game/csgo/cfg
 
-COPY addons_configs/QuakeSounds.json ${SRCDS_DIR}/game/csgo/addons/counterstrikesharp/configs/plugins/CS2-QuakeSounds/QuakeSounds.json
-COPY addons_configs/SimpleAdmin.json ${SRCDS_DIR}/game/csgo/addons/counterstrikesharp/configs/plugins/CS2-SimpleAdmin/CS2-SimpleAdmin.json
-
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh && \
   chown steam:steam /entrypoint.sh
