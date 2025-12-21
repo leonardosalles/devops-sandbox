@@ -313,10 +313,15 @@ gosu steam "${CS2_BIN}" \
   -console \
   +exec server.cfg \
   +sv_pure 0 \
+  +mp_autokick 0 \
+  +mp_tkpunish 0 \
+  +mp_td_dmgtokick 0 \
+  +mp_td_dmgtowarn 0 \
+  +mp_td_spawndmgthreshold 99999 \
   +sv_setsteamaccount "${GSLT}" \
   +rcon_password "${RCON_PASSWORD}" \
   +hostname "${SERVER_HOSTNAME:-Watercooler Server}" \
-  +map "${MAP:-de_inferno}" \
+  +map "${MAP:-de_mirage}" \
   2>&1 | tee "${LOG_FILE}" &
 
 CS2_PID=$!
